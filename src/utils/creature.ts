@@ -34,6 +34,7 @@ export class Creature {
     player: boolean;
     status: Set<Condition> = new Set();
     marker: string;
+    baseColor?: string;
     initiative: number;
     manualOrder: number;
     static: boolean = false;
@@ -86,6 +87,7 @@ export class Creature {
         this.rollHP = creature.rollHP;
 
         this.marker = creature.marker;
+        this.baseColor = creature.baseColor;
 
         this.hp = this.max;
         this.temp = 0;
@@ -231,6 +233,7 @@ export class Creature {
             path: this.path,
             id: this.id,
             marker: this.marker,
+            baseColor: this.baseColor,
             currentHP: this.hp,
             tempHP: this.temp,
             status: Array.from(this.status).map((c) => c.name),
@@ -278,6 +281,7 @@ export class Creature {
         }
         creature.status = new Set(statuses);
         creature.active = state.active;
+        creature.baseColor = state.baseColor;
         return creature;
     }
 }

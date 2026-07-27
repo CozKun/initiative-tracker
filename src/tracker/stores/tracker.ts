@@ -38,6 +38,7 @@ type CreatureUpdate = {
     initiative?: number;
     name?: string;
     marker?: string;
+    baseColor?: string | null;
     temp?: number;
     max?: number;
     status?: Condition[];
@@ -54,6 +55,7 @@ function createTracker() {
     const creatures = writable<Creature[]>([]);
     const updating = writable<Map<Creature, HPUpdate>>(new Map());
     const updateTarget = writable<"ac" | "hp">();
+    const dragEnabled = writable<boolean>(false);
     const { subscribe, set, update } = creatures;
 
     const $logFile = writable<TFile | null>();
@@ -257,6 +259,9 @@ function createTracker() {
             if (change.marker) {
                 creature.marker = change.marker;
             }
+            if ("baseColor" in change) {
+                creature.baseColor = change.baseColor ?? undefined;
+            }
             if (change.status?.length) {
                 for (const status of change.status) {
                     creature.addCondition(status);
@@ -376,6 +381,7 @@ function createTracker() {
         setData: (settings: InitiativeTrackerData) => {
             data.set(settings);
             _settings = settings;
+            dragEnabled.set(settings.dragEnabled ?? false);
         },
 
         getLogger: () => _logger,
@@ -386,6 +392,7 @@ function createTracker() {
 
         updating,
         updateTarget,
+        dragEnabled,
         updateCreatures,
         updateCreatureByName: (name: string, change: CreatureUpdate) =>
             updateAndSave((creatures) => {
@@ -1212,6 +1219,9 @@ class Tracker {
             }
             if (change.marker) {
                 creature.marker = change.marker;
+            }
+            if ("baseColor" in change) {
+                creature.baseColor = change.baseColor ?? undefined;
             }
             if (change.status?.length) {
                 for (const status of change.status) {

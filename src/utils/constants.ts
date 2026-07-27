@@ -76,6 +76,7 @@ export const DEFAULT_SETTINGS: InitiativeTrackerData = {
     diplayPlayerHPValues: true,
     rollHP: false,
     descending: true,
+    dragEnabled: false,
     builder: {
         showParty: true,
         showXP: true,

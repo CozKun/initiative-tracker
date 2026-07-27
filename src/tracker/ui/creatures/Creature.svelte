@@ -1,8 +1,8 @@
 <script lang="ts">
     import { DEFAULT_UNDEFINED, FRIENDLY, HIDDEN, INITIATIVE_TRACKER_VIEW } from "src/utils";
     import type { Creature } from "src/utils/creature";
+    import BaseColorPicker from "./BaseColorPicker.svelte";
     import Initiative from "./Initiative.svelte";
-    import CreatureControls from "./CreatureControls.svelte";
     import Status from "./Status.svelte";
     import { Platform, setIcon } from "obsidian";
     import { tracker } from "../../stores/tracker";
@@ -53,6 +53,10 @@
     };
 </script>
 
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<td class="base-colour-container" on:click|stopPropagation>
+    <BaseColorPicker {creature} />
+</td>
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <td class="initiative-container" on:click={(e) => e.stopPropagation()}>
     <Initiative
@@ -140,16 +144,6 @@
     </div>
 </td>
 
-<td class="controls-container">
-    <CreatureControls
-        on:click={(e) => e.stopPropagation()}
-        on:tag
-        on:edit
-        on:hp
-        {creature}
-    />
-</td>
-
 <style scoped>
     .name-holder {
         display: flex;
@@ -176,18 +170,18 @@
     .creature-adder {
         cursor: pointer;
     }
-
+    .base-colour-container {
+        text-align: center;
+        border-top-left-radius: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
     .statuses {
         display: flex;
         flex-flow: row wrap;
         column-gap: 0.25rem;
     }
 
-    .initiative-container {
-        border-top-left-radius: 0.25rem;
-        border-bottom-left-radius: 0.25rem;
-    }
-    .controls-container {
+    .ac-container {
         border-top-right-radius: 0.25rem;
         border-bottom-right-radius: 0.25rem;
     }

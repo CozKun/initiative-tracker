@@ -45,6 +45,7 @@ export interface InitiativeTrackerData {
     rollHP: boolean;
     builder: BuilderState;
     descending: boolean;
+    dragEnabled: boolean;
     version: number[];
 
     rollPlayerInitiatives: RollPlayerInitiativeBehavior;

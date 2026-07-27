@@ -145,11 +145,11 @@ export default class InitiativeTracker extends Plugin {
     unregisterCommandsFor(encounter: string) {
         if (
             this.app.commands.findCommand(
-                `initiative-tracker:start-${encounter}`
+                `${this.manifest.id}:start-${encounter}`
             )
         ) {
             delete this.app.commands.commands[
-                `initiative-tracker:start-${encounter}`
+                `${this.manifest.id}:start-${encounter}`
             ];
         }
     }

@@ -8,13 +8,14 @@
     import { createEventDispatcher } from "svelte";
     import { dndzone } from "svelte-dnd-action";
     import { flip } from "svelte/animate";
+    import { showCreatureMenu } from "./creature-menu";
 
     import { tracker } from "../../stores/tracker";
     import type InitiativeTracker from "src/main";
     import { getContext } from "svelte";
 
     const plugin = getContext<InitiativeTracker>("plugin");
-    const { state, ordered } = tracker;
+    const { state, ordered, dragEnabled } = tracker;
 
     $: items = [...$ordered].map((c) => {
         return { creature: c, id: getId() };
@@ -63,28 +64,53 @@
     const diceIcon = (node: HTMLElement) => {
         new ExtraButtonComponent(node).setIcon(DICE);
     };
+    const dragLockIcon = (node: HTMLElement, locked: boolean) => {
+        const button = new ExtraButtonComponent(node);
+        const update = (isLocked: boolean) => {
+            button
+                .setIcon(isLocked ? "lock" : "unlock")
+                .setTooltip(
+                    isLocked
+                        ? "Unlock creature order"
+                        : "Lock creature order"
+                );
+        };
+        update(locked);
+        return { update };
+    };
 </script>
 
 <table class="initiative-tracker-table">
     {#if $ordered.length}
         <thead class="tracker-table-header">
+            <th style="width: 8%;">
+                <div
+                    class="drag-lock"
+                    use:dragLockIcon={!$dragEnabled}
+                    on:click|stopPropagation={async () => {
+                        $dragEnabled = !$dragEnabled;
+                        plugin.data.dragEnabled = $dragEnabled;
+                        await plugin.saveSettings();
+                    }}
+                />
+            </th>
             <td
                 style="width: 10%;"
                 use:diceIcon
                 aria-label="Re-Roll Initiatives"
                 on:click={(evt) => tracker.roll(plugin)}
             />
-            <th class="left" style="width:55%">Name</th>
-            <th style="width:15%" use:hpIcon class="center" />
-            <th style="width:15%" use:acIcon class="center" />
-            <th style="width:5%" />
+            <th class="left" style="width:52%">Name</th>
+            <th style="width:18%" use:hpIcon class="center" />
+            <th style="width:12%" use:acIcon class="center" />
         </thead>
         <tbody
             use:dndzone={{
                 items,
                 flipDurationMs,
                 dropTargetStyle: {},
-                morphDisabled: true
+                morphDisabled: true,
+                dragDisabled: !$dragEnabled
             }}
             on:consider={handleDndConsider}
             on:finalize={handleDndFinalize}
@@ -106,12 +132,16 @@
                         dispatch("open-combatant", { creature, newLeaf: e.ctrlKey || e.metaKey });
                         e.stopPropagation();
                     }}
+                    on:contextmenu|preventDefault|stopPropagation={(evt) => {
+                        showCreatureMenu(
+                            creature,
+                            () => dispatch("edit", creature),
+                            evt
+                        );
+                    }}
                 >
                     <CreatureTemplate
                         {creature}
-                        on:hp
-                        on:tag
-                        on:edit
                         on:open-combatant
                     />
                 </tr>
@@ -146,6 +176,10 @@
     }
     .center {
         text-align: center;
+    }
+    .drag-lock {
+        display: flex;
+        justify-content: center;
     }
 
     .tracker-table-header {
