@@ -77,6 +77,7 @@ export const DEFAULT_SETTINGS: InitiativeTrackerData = {
     rollHP: false,
     descending: true,
     dragEnabled: false,
+    showBaseColorColumn: true,
     builder: {
         showParty: true,
         showXP: true,

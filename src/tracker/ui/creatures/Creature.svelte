@@ -12,6 +12,7 @@
     const { updateTarget } = tracker;
 
     export let creature: Creature;
+    export let showBaseColorColumn = true;
     $: statuses = creature.status;
 
     const name = () => creature.getName();
@@ -53,12 +54,18 @@
     };
 </script>
 
+{#if showBaseColorColumn}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <td class="base-colour-container" on:click|stopPropagation>
+        <BaseColorPicker {creature} />
+    </td>
+{/if}
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<td class="base-colour-container" on:click|stopPropagation>
-    <BaseColorPicker {creature} />
-</td>
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<td class="initiative-container" on:click={(e) => e.stopPropagation()}>
+<td
+    class="initiative-container"
+    class:first-column={!showBaseColorColumn}
+    on:click={(e) => e.stopPropagation()}
+>
     <Initiative
         initiative={creature.initiative}
         modifier={[creature.modifier].flat().reduce((a, b) => a + b, 0)}
@@ -172,6 +179,10 @@
     }
     .base-colour-container {
         text-align: center;
+        border-top-left-radius: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
+    .initiative-container.first-column {
         border-top-left-radius: 0.25rem;
         border-bottom-left-radius: 0.25rem;
     }

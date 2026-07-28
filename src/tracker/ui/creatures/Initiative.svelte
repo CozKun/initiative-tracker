@@ -49,6 +49,11 @@
 </div>
 
 <style>
+    .tree-item-flair-outer {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
     .tree-item-flair-outer::after {
         content: "";
     }

@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Unreleased — Coz Initiative Tracker Community Edition
+
+### Added
+
+* A separate `coz-initiative-tracker` plugin identity so the community edition can be installed alongside the official plugin without overwriting its folder.
+* A D&D 5.5e RPG system with the revised Low, Moderate, and High encounter thresholds for levels 1–20, using raw monster XP without creature-count multipliers.
+* Persistent mini base colours for distinguishing duplicate creatures, including a custom colour picker and colour data saved with encounters.
+* A persistent drag-and-drop lock for creature ordering, locked by default.
+* An enabled-by-default setting to hide the mini base colour column without deleting saved colours.
+
+### Changed
+
+* Replaced the per-creature three-dot button with a right-click context menu while preserving its creature actions.
+* Moved the drag lock directly beside the Name label and added a palette indicator above the mini base colour column.
+* Made the Name column absorb extra tracker width while keeping the colour, initiative, HP, and AC columns compact.
+* Centred the mini base colour and initiative reroll indicators with their row values.
+
+### Fixed
+
+* D&D 5.5e encounters with an empty party no longer appear as High difficulty.
+* Explicit creature XP values of `0` are preserved instead of falling back to CR-derived XP.
+* The mini base colour picker follows pointer movement, stays within the available tracker space, and closes reliably when its apply button is used.
+
 ## [13.0.21](https://github.com/Obsidian-TTRPG-Community/initiative-tracker/compare/13.0.20...13.0.21) (2026-04-12)
 
 

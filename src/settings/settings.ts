@@ -161,6 +161,19 @@ export default class InitiativeTrackerSettings extends PluginSettingTab {
                 );
             });
         new Setting(containerEl)
+            .setName("Display Mini Base Colours")
+            .setDesc(
+                "Show the mini base colour column in the initiative tracker. Turning this off hides the column without removing saved colours."
+            )
+            .addToggle((t) => {
+                t.setValue(
+                    this.plugin.data.showBaseColorColumn ?? true
+                ).onChange(async (v) => {
+                    this.plugin.data.showBaseColorColumn = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
             .setName("Roll Equivalent Creatures Together")
             .setDesc(
                 "Equivalent creatures (same Name and AC) will roll the same initiative by default."
