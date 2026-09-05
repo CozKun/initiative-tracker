@@ -9,7 +9,7 @@
     import { createEventDispatcher } from "svelte";
 
     const dispatch = createEventDispatcher();
-    const { updateTarget } = tracker;
+    const { quickHealth } = tracker;
 
     export let creature: Creature;
     export let showBaseColorColumn = true;
@@ -121,11 +121,20 @@
 <td
     class="center hp-container creature-adder"
     class:mobile={Platform.isMobile}
+    class:health-selected={$quickHealth?.creature === creature}
+    role="button"
+    tabindex="0"
+    aria-label={`Adjust health: ${name()}`}
+    aria-haspopup="dialog"
+    aria-expanded={$quickHealth?.creature === creature}
+    on:keydown|stopPropagation={(evt) => {
+        if (evt.key === "Enter" || evt.key === " ") {
+            evt.preventDefault();
+            tracker.openQuickHealth(creature, evt.currentTarget);
+        }
+    }}
     on:click|stopPropagation={(evt) => {
-        const prev = $updateTarget;
-        $updateTarget = "hp";
-        if (prev == "ac") return;
-        tracker.setUpdate(creature, evt);
+        tracker.openQuickHealth(creature, evt.currentTarget);
     }}
 >
     <div>
@@ -137,10 +146,7 @@
     class="center ac-container creature-adder"
     class:mobile={Platform.isMobile}
     on:click|stopPropagation={(evt) => {
-        const prev = $updateTarget;
-        $updateTarget = "ac";
-        if (prev == "hp") return;
-        tracker.setUpdate(creature, evt);
+        tracker.openEffect(creature, false, "ac");
     }}
 >
     <div
@@ -152,6 +158,7 @@
 </td>
 
 <style scoped>
+    .health-selected { outline: 2px solid var(--interactive-accent); outline-offset: -2px; border-radius: var(--radius-s); }
     .name-holder {
         display: flex;
         align-items: center;

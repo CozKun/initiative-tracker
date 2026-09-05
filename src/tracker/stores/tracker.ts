@@ -25,11 +25,12 @@ import type {
     DifficultyThreshold
 } from "src/utils/rpg-system";
 import type { StackRoller } from "@javalent/dice-roller";
+import { isValidHpMultiplier } from "src/utils/hp-multiplier";
 
 type HPUpdate = {
     saved: boolean;
     resist: boolean;
-    customMod: "2" | "1";
+    customMod: number | string;
 };
 type CreatureUpdate = {
     hp?: number;
@@ -55,6 +56,8 @@ function createTracker() {
     const creatures = writable<Creature[]>([]);
     const updating = writable<Map<Creature, HPUpdate>>(new Map());
     const updateTarget = writable<"ac" | "hp">();
+    const quickHealth = writable<{ creature: Creature; anchor: HTMLElement } | null>(null);
+    const updateSession = writable<{ focusConditions: boolean } | null>(null);
     const dragEnabled = writable<boolean>(false);
     const { subscribe, set, update } = creatures;
 
@@ -392,6 +395,35 @@ function createTracker() {
 
         updating,
         updateTarget,
+        quickHealth,
+        updateSession,
+        openQuickHealth: (creature: Creature, anchor: HTMLElement) => {
+            updating.set(new Map());
+            updateTarget.set(null);
+            updateSession.set(null);
+            quickHealth.set({ creature, anchor });
+        },
+        openEffect: (creature: Creature, focusConditions = false, target: "hp" | "ac" = "hp") => {
+            quickHealth.set(null);
+            updating.set(new Map([[creature, { saved: false, resist: false, customMod: "1" }]]));
+            updateTarget.set(target);
+            updateSession.set({ focusConditions });
+        },
+        applyQuickHealth: (amount: number, heal = false) => {
+            const session = get(quickHealth);
+            if (!session || !get(creatures).includes(session.creature) ||
+                !Number.isSafeInteger(amount) || amount <= 0) return false;
+            const { creature } = session;
+            const hp = heal ? amount : -amount;
+            quickHealth.set(null);
+            _logger?.logUpdate([{
+                name: creature.getName(), hp, temp: false, max: false,
+                status: null, remove_status: null, saved: false,
+                unc: creature.hp <= 0, ac: null, ac_add: false
+            }]);
+            updateCreatures({ creature, change: { hp } });
+            return true;
+        },
         dragEnabled,
         updateCreatures,
         updateCreatureByName: (name: string, change: CreatureUpdate) =>
@@ -485,15 +517,15 @@ function createTracker() {
             creatures.filter((c) => c.player)
         ),
 
-        setUpdate: (creature: Creature, evt: MouseEvent) =>
+        setUpdate: (creature: Creature, evt?: MouseEvent) =>
             updating.update((creatures) => {
                 if (creatures.has(creature)) {
                     creatures.delete(creature);
                 } else {
                     creatures.set(creature, {
-                        saved: evt.getModifierState("Shift"),
-                        resist: evt.getModifierState(modifier),
-                        customMod: evt.getModifierState("Alt") ? "2" : "1"
+                        saved: evt?.getModifierState("Shift") ?? false,
+                        resist: evt?.getModifierState(modifier) ?? false,
+                        customMod: evt?.getModifierState("Alt") ? "2" : "1"
                     });
                 }
                 return creatures;
@@ -505,6 +537,9 @@ function createTracker() {
             removeStatuses: Condition[] = []
         ) =>
             updating.update((updatingCreatures) => {
+                if ([...updatingCreatures.values()].some((entry) => !isValidHpMultiplier(entry.customMod))) {
+                    return updatingCreatures;
+                }
                 const messages: UpdateLogMessage[] = [];
                 const updates: CreatureUpdates[] = [];
 
@@ -543,7 +578,7 @@ function createTracker() {
                         toAdd =
                             -1 *
                             Math.sign(toAdd) *
-                            Math.max(Math.abs(toAdd) * modifier, 1);
+                            (modifier === 0 ? 0 : Math.max(Math.abs(toAdd) * modifier, 1));
                         toAdd = roundHalf ? Math.trunc(toAdd) : toAdd;
                         message.hp = toAdd;
                         if (maxHpDamage) {

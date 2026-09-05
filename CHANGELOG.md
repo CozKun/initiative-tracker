@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Unreleased — Coz Initiative Tracker Community Edition
 
+### Beta 13.0.21-beta.3
+
+* Renamed the effect modifier to Multiplier (×), with examples, tooltips, and validation. Zero now causes no HP change; saved/resistant multipliers still combine as before.
+* Replaced the D&D 5.5e linear XP meter with labelled Trivial (10%), Low, Moderate, and High bands (30% each). Actual XP thresholds and encounter classification are unchanged; hovering shows the party-specific boundaries.
+* High occupies its own band with no invented upper XP limit. Removing all valid party levels clears the gauge instead of leaving stale difficulty on screen.
+
+### Beta 13.0.21-beta.2
+
+* Clicking HP opens a focused single-creature Damage/Heal panel. Clicking another creature switches targets; Enter applies and Escape or clicking away cancels.
+* Apply effect and Add condition remain available from the creature menu. The effect panel retains saves, resistance, modifiers, temporary/max HP, and conditions, with explicit Add targets selection.
+* The mini base colour picker remembers the last eight applied colours across encounters and restarts, supports one-click reuse, and includes a No colour option.
+* Colour and health popovers fit their available window space, including Obsidian popout windows.
+
 ### Added
 
 * A separate `coz-initiative-tracker` plugin identity so the community edition can be installed alongside the official plugin without overwriting its folder.

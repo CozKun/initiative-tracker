@@ -78,6 +78,7 @@ export const DEFAULT_SETTINGS: InitiativeTrackerData = {
     descending: true,
     dragEnabled: false,
     showBaseColorColumn: true,
+    recentBaseColours: [],
     builder: {
         showParty: true,
         showXP: true,

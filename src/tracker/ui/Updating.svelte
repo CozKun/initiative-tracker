@@ -3,14 +3,23 @@
     import type InitiativeTracker from "src/main";
     import { AC, HP, REMOVE, TAG } from "src/utils";
     import { ConditionSuggestionModal } from "src/utils/suggester";
-    import { getContext } from "svelte";
+    import { getContext, tick } from "svelte";
     import { getId } from "src/utils/creature";
     import Status from "src/tracker/ui/creatures/Status.svelte";
 
     import { tracker } from "../stores/tracker";
-    const { updating, updateTarget } = tracker;
+    const { updating, updateTarget, updateSession, ordered } = tracker;
+    let choosingTargets = false;
+    function reveal(node: HTMLElement) {
+        tick().then(() => {
+            if (node.isConnected) node.scrollIntoView({ block: "nearest" });
+        });
+    }
     import { writable } from "svelte/store";
     import type { Condition } from "src/types/creatures";
+    import { isValidHpMultiplier } from "src/utils/hp-multiplier";
+    const multiplierHelp = "Multiplies damage or healing for this creature: 1 = normal, 2 = double, 0.5 = half, 0 = none. Saved and Resist each halve the amount as well. Does not change temporary HP or prevent conditions.";
+    $: invalidMultiplier = [...$updating.values()].some((entry) => !isValidHpMultiplier(entry.customMod));
 
     const plugin = getContext<InitiativeTracker>("plugin");
     const hpIcon = (node: HTMLElement) => {
@@ -72,6 +81,7 @@
                 status ? addStatus() : performUpdate(true);
         }};
         createModal();
+        if ($updateSession?.focusConditions) conditionText.inputEl.focus();
     };
     const createModal = () => {
         modal = new ConditionSuggestionModal(
@@ -90,9 +100,10 @@
         });
     };
     function init(el: HTMLInputElement, target: "hp" | "ac") {
-        if ($updateTarget == target) el.focus();
+        if ($updateTarget == target && !$updateSession?.focusConditions) el.focus();
     }
     const performUpdate = (perform: boolean) => {
+        if (perform && [...$updating.values()].some((entry) => !isValidHpMultiplier(entry.customMod))) return;
         if (perform) {
             tracker.doUpdate(damage ?? "", $statuses, ac);
         } else {
@@ -112,6 +123,24 @@
 </script>
 
 {#if $updating.size}
+    <div class="effect-heading" use:reveal>
+        <strong>{$updateTarget === "hp" ? "Apply effect" : "Armour class"} · {$updating.size} {$updating.size === 1 ? "target" : "targets"}</strong>
+        <button type="button" aria-expanded={choosingTargets} on:click={() => choosingTargets = !choosingTargets}>
+            {choosingTargets ? "Done selecting" : "Add targets"}
+        </button>
+    </div>
+    {#if choosingTargets}
+        <div class="target-choices" role="group" aria-label="Effect targets">
+            {#each $ordered as creature}
+                <label>
+                    <input type="checkbox" checked={$updating.has(creature)}
+                        on:change={() => tracker.setUpdate(creature)} />
+                    {#if creature.baseColor}<span class="target-colour" style:background-color={creature.baseColor} />{/if}
+                    {creature.getName()}
+                </label>
+            {/each}
+        </div>
+    {/if}
     <div class="updating-container">
         {#if $updateTarget == "hp"}
             <div class="updating-hp">
@@ -240,7 +269,7 @@
                 {#if $updateTarget == "hp"}
                     <th style="padding:0 0.2rem" class="center">Saved</th>
                     <th style="padding:0 0.2rem" class="center">Resist</th>
-                    <th style="padding:0 0.2rem" class="center">Modifier</th>
+                    <th style="padding:0 0.2rem" class="center" title={multiplierHelp}>Multiplier (×)</th>
                     <th />
                 {/if}
             </thead>
@@ -248,7 +277,8 @@
                 {#each [...$updating.entries()] as [creature, update], i}
                     <tr class="updating-creature-table-row">
                         <td>
-                            <span>
+                            <span class="target-name">
+                                {#if creature.baseColor}<span class="target-colour" style:background-color={creature.baseColor} />{/if}
                                 {creature.name +
                                     (creature.number
                                         ? " " + creature.number
@@ -277,12 +307,21 @@
                             <td class="center">
                                 <input
                                     type="number"
+                                    min="0"
+                                    step="any"
+                                    title={multiplierHelp}
+                                    aria-label={`HP multiplier for ${creature.getName()}`}
+                                    aria-invalid={!isValidHpMultiplier(update.customMod)}
                                     class="center"
                                     style="width:90%; height:80%; padding:0;"
-                                    bind:value={update.customMod}
+                                    value={update.customMod}
+                                    on:input={(evt) => {
+                                        update.customMod = evt.currentTarget.value;
+                                        $updating = $updating;
+                                    }}
                                     on:keydown={function (evt) {
                                         if (evt.key === "Escape") {
-                                            this.value = "1";
+                                            update.customMod = 1;
                                             return;
                                         }
                                         if (evt.key === "Enter") {
@@ -309,6 +348,12 @@
             </tbody>
         </table>
     </div>
+    {#if $updateTarget === "hp"}
+        <small class="multiplier-help">Multiplier: 1 normal · 2 double · 0.5 half · 0 no HP change.</small>
+    {/if}
+    {#if invalidMultiplier}
+        <small class="multiplier-error" role="alert">Enter a multiplier of 0 or more for each target.</small>
+    {/if}
     <div class="updating-buttons">
         <span
             use:checkIcon
@@ -328,6 +373,15 @@
 {/if}
 
 <style scoped>
+    .multiplier-help, .multiplier-error { display: block; margin: 0.4rem 0.5rem; color: var(--text-muted); }
+    .multiplier-error { color: var(--text-error); }
+    .effect-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+        justify-content: space-between; margin: 0.65rem 0; }
+    .target-choices { display: flex; flex-direction: column; gap: 0.35rem; max-height: 180px;
+        overflow: auto; margin-bottom: 0.65rem; padding: 0.5rem; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); }
+    .target-choices label, .target-name { display: flex; align-items: center; gap: 0.4rem; }
+    .target-colour { display: inline-block; flex-shrink: 0; width: 0.7rem; height: 0.7rem;
+        border: 1px solid var(--background-modifier-border); border-radius: 50%; }
     .input {
         display: flex;
         align-items: center;

@@ -47,6 +47,7 @@ export interface InitiativeTrackerData {
     descending: boolean;
     dragEnabled: boolean;
     showBaseColorColumn: boolean;
+    recentBaseColours: string[];
     version: number[];
 
     rollPlayerInitiatives: RollPlayerInitiativeBehavior;

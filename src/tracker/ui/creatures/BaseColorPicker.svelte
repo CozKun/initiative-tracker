@@ -2,14 +2,19 @@
     import { setIcon } from "obsidian";
     import type { Creature } from "src/utils/creature";
     import { tracker } from "src/tracker/stores/tracker";
-    import { tick } from "svelte";
+    import { getContext, tick } from "svelte";
+    import type InitiativeTracker from "src/main";
+    import { recentColours } from "src/utils/recent-colours";
+    import { popover } from "../popover";
 
     export let creature: Creature;
 
+    const plugin = getContext<InitiativeTracker>("plugin");
+    const { data } = tracker;
+    $: recent = recentColours($data?.recentBaseColours);
+
     let open = false;
     let anchor: HTMLButtonElement;
-    let pickerLeft = 0;
-    let pickerTop = 0;
     let hue = 0;
     let saturation = 0;
     let value = 0.5;
@@ -82,17 +87,6 @@
         }
 
         setDraft(creature.baseColor ?? "#808080");
-        const bounds = anchor.getBoundingClientRect();
-        const width = 210;
-        const height = 190;
-        pickerLeft = Math.max(
-            8,
-            Math.min(bounds.left, window.innerWidth - width - 8)
-        );
-        pickerTop =
-            bounds.bottom + height + 8 <= window.innerHeight
-                ? bounds.bottom + 4
-                : Math.max(8, bounds.top - height - 4);
         open = true;
     }
 
@@ -127,33 +121,17 @@
         setDraft((evt.currentTarget as HTMLInputElement).value);
     }
 
-    async function apply() {
-        const color = draft;
+    async function apply(color: string | null = draft) {
         open = false;
         await tick();
+        if (color) {
+            plugin.data.recentBaseColours = recentColours(plugin.data.recentBaseColours, color);
+        }
         tracker.updateCreatures({
             creature,
             change: { baseColor: color }
         });
-    }
-
-    function closeOnOutside(node: HTMLElement) {
-        const close = (evt: PointerEvent) => {
-            const target = evt.target as Node;
-            if (!node.contains(target) && !anchor.contains(target)) {
-                open = false;
-            }
-        };
-        document.addEventListener("pointerdown", close, true);
-        return {
-            destroy() {
-                document.removeEventListener("pointerdown", close, true);
-            }
-        };
-    }
-
-    function portal(node: HTMLElement) {
-        document.body.appendChild(node);
+        await plugin.saveSettings();
     }
 
     const checkIcon = (node: HTMLElement) => setIcon(node, "check");
@@ -182,9 +160,7 @@
             class="picker"
             role="dialog"
             aria-label="Mini base colour picker"
-            style={`left:${pickerLeft}px; top:${pickerTop}px;`}
-            use:portal
-            use:closeOnOutside
+            use:popover={{ anchor, close: () => (open = false) }}
             on:pointerdown|stopPropagation
             on:click|stopPropagation
             on:contextmenu|stopPropagation
@@ -233,7 +209,7 @@
                     title="Apply colour"
                     aria-label="Apply colour"
                     use:checkIcon
-                    on:click={apply}
+                    on:click={() => apply()}
                 />
                 <button
                     type="button"
@@ -244,6 +220,21 @@
                     on:click={() => (open = false)}
                 />
             </div>
+            {#if recent.length}
+                <div class="recent-colours">
+                    <span>Recent colours</span>
+                    <div class="recent-swatches">
+                        {#each recent as colour}
+                            <button type="button" class="recent-swatch" style:background-color={colour}
+                                title={colour} aria-label={`Use recent colour ${colour}`}
+                                on:click={() => apply(colour)} />
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+            <button type="button" class="clear-colour" on:click={() => apply(null)}>
+                <span class="no-colour-swatch" aria-hidden="true" /> No colour
+            </button>
         </div>
     {/if}
 </div>
@@ -273,6 +264,7 @@
         position: fixed;
         z-index: var(--layer-popover, 1000);
         box-sizing: border-box;
+        overflow: auto;
         width: 210px;
         padding: 0.6rem;
         background: var(--background-primary);
@@ -349,4 +341,11 @@
     .picker-footer .clickable-icon {
         margin: 0;
     }
+    .recent-colours { margin-top: 0.65rem; color: var(--text-muted); font-size: var(--font-ui-smaller); }
+    .recent-swatches { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0.3rem; margin-top: 0.35rem; }
+    .recent-swatch { width: 100%; height: auto; aspect-ratio: 1; min-height: 0; padding: 0;
+        border: 1px solid var(--background-modifier-border); border-radius: 50%; box-shadow: none; }
+    .clear-colour { display: flex; align-items: center; gap: 0.4rem; width: 100%; margin-top: 0.65rem; }
+    .no-colour-swatch { width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid var(--text-muted);
+        background: linear-gradient(135deg, transparent 43%, var(--text-muted) 45%, var(--text-muted) 55%, transparent 57%); }
 </style>

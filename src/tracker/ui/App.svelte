@@ -11,6 +11,7 @@
     import { ExtraButtonComponent, Notice } from "obsidian";
     import { ADD, COPY } from "src/utils";
     import Updating from "./Updating.svelte";
+    import QuickHealth from "./QuickHealth.svelte";
     import Logger from "src/logger/logger";
 
     import { AddCreatureModal } from "./create/modal";
@@ -20,7 +21,7 @@
 
     export let plugin: InitiativeTracker;
 
-    const { data } = tracker;
+    const { data, quickHealth, updateSession } = tracker;
 
     $: difficulty = $data.displayDifficulty;
 
@@ -83,7 +84,14 @@
         on:edit={(evt) => editOrAdd(evt.detail)}
         on:open-combatant={(evt) => plugin.openCombatant(evt.detail.creature, evt.detail.newLeaf)}
     />
-    <Updating />
+    {#key $updateSession}
+        <Updating />
+    {/key}
+    {#if $quickHealth}
+        {#key $quickHealth}
+            <QuickHealth session={$quickHealth} />
+        {/key}
+    {/if}
     {#if saving}
         <SaveEncounter on:cancel={() => (saving = false)} />
     {:else if loading}
