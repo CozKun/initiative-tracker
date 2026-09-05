@@ -12,11 +12,14 @@ export function showCreatureMenu(
 
     menu.addItem((item) => {
         item.setIcon(HP)
-            .setTitle("Set Health/Status")
+            .setTitle("Apply effect…")
             .onClick((e) => {
-                tracker.updateTarget.set("hp");
-                tracker.setUpdate(creature, e as MouseEvent);
+                tracker.openEffect(creature);
             });
+    });
+    menu.addItem((item) => {
+        item.setIcon("tag").setTitle("Add condition…")
+            .onClick(() => tracker.openEffect(creature, true));
     });
     if (creature.current_ac != creature.ac) {
         menu.addItem((item) => {

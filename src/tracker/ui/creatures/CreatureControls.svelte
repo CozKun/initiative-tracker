@@ -29,10 +29,9 @@
             const menu = new Menu();
             menu.addItem((item) => {
                 item.setIcon(HP)
-                    .setTitle("Set Health/Status")
+                    .setTitle("Apply effect…")
                     .onClick((e: MouseEvent) => {
-                        tracker.updateTarget.set("hp");
-                        tracker.setUpdate(creature, e);
+                        tracker.openEffect(creature);
                     });
             });
             if (creature.current_ac != creature.ac) {

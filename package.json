@@ -5,6 +5,8 @@
     "types": "./dist/index.d.ts",
     "scripts": {
         "build": "node esbuild.config.mjs production && tsc --project tsconfig.json --emitDeclarationOnly --declaration --declarationMap --outdir ./dist",
+        "build:beta": "npm run build && node scripts/package-beta.mjs",
+        "test:beta": "node tests/run-beta.mjs",
         "dev": "node esbuild.config.mjs"
     },
     "keywords": [],
