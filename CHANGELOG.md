@@ -2,22 +2,40 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## Unreleased — Coz Initiative Tracker Community Edition
+## Coz Initiative Tracker Community Edition
 
-### Beta 13.0.21-beta.3
+### 13.0.22 — 2026-09-06
 
-* Renamed the effect modifier to Multiplier (×), with examples, tooltips, and validation. Zero now causes no HP change; saved/resistant multipliers still combine as before.
-* Replaced the D&D 5.5e linear XP meter with labelled Trivial (10%), Low, Moderate, and High bands (30% each). Actual XP thresholds and encounter classification are unchanged; hovering shows the party-specific boundaries.
-* High occupies its own band with no invented upper XP limit. Removing all valid party levels clears the gauge instead of leaving stale difficulty on screen.
+Promoted from `13.0.21-beta.3` after live Obsidian approval. This is a private Community Edition update under the stable `coz-initiative-tracker` identity.
 
-### Beta 13.0.21-beta.2
+#### Added
 
-* Clicking HP opens a focused single-creature Damage/Heal panel. Clicking another creature switches targets; Enter applies and Escape or clicking away cancels.
-* Apply effect and Add condition remain available from the creature menu. The effect panel retains saves, resistance, modifiers, temporary/max HP, and conditions, with explicit Add targets selection.
-* The mini base colour picker remembers the last eight applied colours across encounters and restarts, supports one-click reuse, and includes a No colour option.
-* Colour and health popovers fit their available window space, including Obsidian popout windows.
+* A focused single-creature Damage/Heal panel with automatic input focus, Enter to apply, and Escape or an outside click to cancel.
+* The last eight applied mini base colours, shared across creatures and remembered between encounters and restarts, with one-click reuse and a visible No colour action.
+* Explicit Add targets selection for effects, plus direct Apply effect and Add condition entries in the creature menu.
 
-### Added
+#### Changed
+
+* Clicking another creature's HP replaces the current quick-health target. Saves, resistance, conditions, and temporary/max HP remain in the separate effect panel.
+* Renamed Modifier to Multiplier (×), with inline examples, explanatory tooltips, and validation for non-negative finite values.
+* Replaced the D&D 5.5e linear XP meter with labelled Trivial (10%), Low, Moderate, and High bands (30% each). The existing encounter calculations and XP thresholds are unchanged; hovering displays the party's boundaries.
+* High has its own visible band without an invented upper XP limit. The exact encounter XP remains visible, including encounters without party levels.
+
+#### Fixed
+
+* Correcting an HP misclick no longer adds an unintended creature to a group update or carries stale effect inputs into a new selection.
+* A zero multiplier applies no HP change. Empty or invalid multipliers cannot silently apply an effect, and Escape resets the multiplier to 1.
+* Removing all valid party levels clears the difficulty gauge and prompts for party levels instead of leaving a stale filled bar.
+* Colour and health popovers fit their available window space. Quick health opens beside the HP column where space permits, keeping other HP cells accessible.
+
+#### Validation
+
+* Production build and 19 browser interaction checks passed, covering targeting, damage/healing, recent colours, multipliers, and difficulty boundaries for levels 1–20 and mixed-level parties.
+* The beta was accepted in live Obsidian before stable promotion. Stable and beta retain separate settings and saved encounters.
+
+### Earlier private builds — 13.0.21
+
+#### Added
 
 * A separate `coz-initiative-tracker` plugin identity so the community edition can be installed alongside the official plugin without overwriting its folder.
 * A D&D 5.5e RPG system with the revised Low, Moderate, and High encounter thresholds for levels 1–20, using raw monster XP without creature-count multipliers.
@@ -25,14 +43,14 @@ All notable changes to this project will be documented in this file. See [standa
 * A persistent drag-and-drop lock for creature ordering, locked by default.
 * An enabled-by-default setting to hide the mini base colour column without deleting saved colours.
 
-### Changed
+#### Changed
 
 * Replaced the per-creature three-dot button with a right-click context menu while preserving its creature actions.
 * Moved the drag lock directly beside the Name label and added a palette indicator above the mini base colour column.
 * Made the Name column absorb extra tracker width while keeping the colour, initiative, HP, and AC columns compact.
 * Centred the mini base colour and initiative reroll indicators with their row values.
 
-### Fixed
+#### Fixed
 
 * D&D 5.5e encounters with an empty party no longer appear as High difficulty.
 * Explicit creature XP values of `0` are preserved instead of falling back to CR-derived XP.
