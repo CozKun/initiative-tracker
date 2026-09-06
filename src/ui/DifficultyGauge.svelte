@@ -10,6 +10,7 @@
     export let labels: string[] = [];
     export let system: string;
     export let formattedXp: string;
+    export let detailed = false;
     const difficultyBar = tweened(0, { duration: 400, easing: cubicOut });
     $: banded = system === "dnd5e-55";
     $: scale = banded ? dnd55DifficultyScale(difficulty.value, thresholds) : null;
@@ -45,18 +46,20 @@
                 {/each}
                 <span class="difficulty-marker" style:left={`${$difficultyBar * 100}%`} aria-hidden="true" />
             </div>
-            <div class="difficulty-legend">
+            <div class="difficulty-legend" class:detailed>
                 {#each scale.bands as band}
-                    <span class="legend-item" class:current={scale.current.name === band.name} use:tooltip={bandHelp(band)}>
+                    <span class="legend-item" class:current={detailed && scale.current.name === band.name} use:tooltip={bandHelp(band)}>
                         <span class="legend-name"><i data-tier={band.name} aria-hidden="true" />{band.name}</span>
-                        <small>{bandRange(band)}</small>
+                        {#if detailed}<small>{bandRange(band)}</small>{/if}
                     </span>
                 {/each}
             </div>
+            {#if detailed}
             <div class="difficulty-distance">
                 <span class="next-bracket">{#if scale.next}<strong>{scale.next.add.toLocaleString()} XP</strong> to {scale.next.name}{:else}Highest bracket{/if}</span>
                 <span class="previous-bracket">{#if scale.previous}Remove <strong>{scale.previous.remove.toLocaleString()} XP</strong> for {scale.previous.name}{:else}Lowest bracket{/if}</span>
             </div>
+            {/if}
         {:else}
             <div class="difficulty-empty" />
         {/if}
@@ -95,9 +98,11 @@
     .difficulty-marker { position: absolute; top: -3px; bottom: -3px; width: 3px; transform: translateX(-50%);
         background: var(--text-normal); border: 1px solid var(--background-primary); border-radius: 2px;
         box-shadow: 0 0 0 1px var(--text-normal); pointer-events: none; }
-    .difficulty-legend { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.35rem;
+    .difficulty-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.35rem 0.55rem;
         margin-top: 0.45rem; color: var(--text-muted); font-size: var(--font-ui-smaller); }
-    .legend-item { display: flex; flex-direction: column; gap: 0.2rem; padding-bottom: 0.25rem; border-bottom: 2px solid transparent; }
+    .difficulty-legend.detailed { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.35rem; }
+    .legend-item { display: flex; flex-direction: column; gap: 0.2rem; }
+    .detailed .legend-item { padding-bottom: 0.25rem; border-bottom: 2px solid transparent; }
     .legend-item.current { color: var(--text-normal); border-bottom-color: var(--text-muted); }
     .legend-name { display: inline-flex; align-items: center; gap: 0.25rem; }
     .legend-item small { font-family: inherit; font-size: 0.9em; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }

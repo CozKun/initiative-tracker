@@ -199,18 +199,10 @@ try {
         });
     });
     assert.equal(systemChecks,true); check("band boundaries hold across levels 1–20 and a mixed-level party");
-    for (const [xp,next,previous] of [[0,'2,000 XP to Low','Lowest bracket'],
-        [2000,'1,000 XP to Moderate','Remove 1 XP for Trivial'],
-        [2999,'1 XP to Moderate','Remove 1,000 XP for Trivial'],
-        [3000,'1,400 XP to High','Remove 1 XP for Low'],
-        [3700,'700 XP to High','Remove 701 XP for Low'],
-        [4400,'Highest bracket','Remove 1 XP for Moderate']]) {
-        await page.evaluate(xp => fixture.setDifficultyScenario([5,5,5,5],xp),xp);
-        assert.equal(await page.locator('.next-bracket').innerText(),next);
-        assert.equal(await page.locator('.previous-bracket').innerText(),previous);
-    }
-    assert.match(await page.locator('.difficulty-legend').innerText(),/2,000–<3,000 XP/);
-    check('visible bracket ranges and XP distances handle both directions and exact thresholds');
+    assert.deepEqual(await page.locator('.legend-name').allTextContents(),['Trivial','Low','Moderate','High']);
+    assert.equal(await page.locator('.difficulty-legend small, .difficulty-distance').count(),0);
+    assert.ok((await page.locator('.difficulty-bands-container').boundingBox()).height < 70);
+    check('tracker keeps compact difficulty labels and hover thresholds without builder detail rows');
     await page.evaluate(() => fixture.setDifficultyScenario([5,5,5,5],44000));
     await page.waitForFunction(() => Number(document.querySelector('[role=meter]')?.getAttribute('aria-valuenow')) > 98);
     assert.equal(await page.locator('.difficulty-caption strong').innerText(),"High");
@@ -224,9 +216,16 @@ try {
     assert.equal(await page.locator('.difficulty-distance').count(),0);
     await page.evaluate(() => fixture.setDifficultyScenario([5,5,5,5],3700));
     await page.waitForFunction(() => Math.abs(Number(document.querySelector('[role=meter]')?.getAttribute('aria-valuenow'))-55)<.01);
+    await page.addStyleTag({content: '.obsidian-initiative-tracker h2 {font-size:9px;color:red;font-family:serif;font-variant:small-caps;letter-spacing:3px;text-transform:uppercase;}'});
+    assert.deepEqual(await page.getByRole('heading',{name:'Test encounter',exact:true}).evaluate(el => ({
+        size:getComputedStyle(el).fontSize,variant:getComputedStyle(el).fontVariant,
+        transform:getComputedStyle(el).textTransform,color:getComputedStyle(el).color
+    })),{size:'16px',variant:'normal',transform:'none',color:'rgb(229, 230, 236)'});
+    check('actual tracker encounter heading uses the shared readable style despite theme heading overrides');
     await page.locator('.difficulty-bands-container').screenshot({path:path.join(out,'difficulty-bands.png')});
     await page.addStyleTag({content: ':root { --background-primary:#ece4d3; --text-normal:#372e28; --text-muted:#675b4d; --text-faint:#aaa294; } body {background:#ece4d3;color:#372e28}'});
     await page.locator('.difficulty-bands-container').screenshot({path:path.join(out,'difficulty-bands-light.png')});
+    await page.locator('.initiatie-tracker-metadata').screenshot({path:path.join(out,'tracker-header-light.png')});
     await page.evaluate(() => fixture.setDifficultyScenario([5,5,5,5],500,'dnd5e'));
     assert.equal(await page.locator('meter.difficulty-bar').count(),1);
     assert.equal(await page.locator('.difficulty-bands').count(),0);

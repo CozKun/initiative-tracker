@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.23-beta.5 — 2026-09-06 (beta only)
+
+* Restored the initiative tracker's compact difficulty display: current difficulty, total XP, the banded bar and tier names. Thresholds remain available on hover; visible XP ranges and previous/next bracket distances stay in the encounter builder.
+* Matched the builder's encounter title and the initiative tracker's encounter title to the readable Party and Encounter difficulty headings, including consistent size, colour and typography across theme heading styles.
+
+Validation: production build and 36 browser checks, including the compact tracker layout, full builder bracket details, both encounter headings under simulated theme overrides, and light/dark visual checks. Stable remains 13.0.22.
+
 ### 13.0.23-beta.4 — 2026-09-06 (beta only)
 
 * Removed hover popups from general party/difficulty sections, creature-copy groups, quantity wrappers, empty difficulty bars, and shared dialog backgrounds. Region and dialog names remain available to assistive technology without triggering Obsidian's aria-label tooltip handling.

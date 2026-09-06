@@ -234,7 +234,7 @@
             <div use:nameSaveIcon on:click={setName} />
             <div use:cancelIcon on:click={cancelName} />
         {:else}
-            <h5 class="built-encounter">{$name}</h5>
+            <h3 class="built-encounter builder-section-heading">{$name}</h3>
             <div use:editIcon on:click={() => ($updatingName = true)} />
         {/if}
     </div>

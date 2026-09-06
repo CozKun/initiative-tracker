@@ -1,6 +1,7 @@
 @import "./main.css";
 
-.initiative-tracker.encounter-builder .builder-section-heading {
+.initiative-tracker.encounter-builder .builder-section-heading,
+.obsidian-initiative-tracker .initiative-tracker-name-container .initiative-tracker-name {
     margin: 0;
     font-family: var(--font-interface, sans-serif);
     font-size: 1rem;

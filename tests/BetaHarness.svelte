@@ -8,7 +8,7 @@
     import CreatureRow from "../src/tracker/ui/creatures/Creature.svelte";
     import QuickHealth from "../src/tracker/ui/QuickHealth.svelte";
     import Updating from "../src/tracker/ui/Updating.svelte";
-    import Difficulty from "../src/tracker/ui/Difficulty.svelte";
+    import Metadata from "../src/tracker/ui/Metadata.svelte";
     import { dnd55DifficultyScale } from "../src/utils/difficulty-scale";
     import { getRpgSystem } from "../src/utils/rpg-system";
     import { showCreatureMenu } from "../src/tracker/ui/creatures/creature-menu";
@@ -56,6 +56,7 @@
             ...levels.map((level, i) => new Creature({ name: `Player ${i+1}`, hp: 30, level, player: true })),
             new Creature({ name: "Encounter", hp: 30, xp })
         ]);
+        tracker.name.set("Test encounter");
         showDifficulty = true;
     };
     (window as any).fixture = { tracker, first, second, plugin, log, get, recentColours,
@@ -100,8 +101,7 @@
             </div>
         </div>
     {:else}
-    <h2>Initiative Tracker Beta</h2>
-    {#if showDifficulty}<Difficulty />{/if}
+    {#if showDifficulty}<Metadata />{:else}<h2>Initiative Tracker Beta</h2>{/if}
     <table class="initiative-tracker-table"><thead><tr><th>Colour</th><th>Init</th><th>Name</th><th>HP</th><th>AC</th></tr></thead>
         <tbody>{#each $tracker as creature (creature.id)}
             <tr on:contextmenu|preventDefault={(event) => showCreatureMenu(creature, () => {}, event)}>

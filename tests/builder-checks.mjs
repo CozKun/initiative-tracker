@@ -178,7 +178,7 @@ export async function runBuilderChecks(page, url, out, check) {
     assert.equal(await page.getByRole('region',{name:'Encounter difficulty summary',exact:true}).count(),1);
     assert.equal(await page.getByRole('group',{name:'Goblin copies',exact:true}).count(),1);
     await page.addStyleTag({content: '.markdown-rendered h3, .markdown-rendered h5 {font-size:9px;color:red;font-family:serif;font-variant:small-caps;letter-spacing:3px;text-transform:uppercase;}'});
-    for (const name of ['Party','Encounter difficulty']) {
+    for (const name of ['Party','Encounter difficulty','Colour test']) {
         const style = await page.getByRole('heading',{name,exact:true}).evaluate(el => ({
             size:getComputedStyle(el).fontSize,variant:getComputedStyle(el).fontVariant,
             transform:getComputedStyle(el).textTransform,color:getComputedStyle(el).color
@@ -214,4 +214,27 @@ export async function runBuilderChecks(page, url, out, check) {
         {background:'rgb(228, 219, 200)',text:'rgb(55, 46, 40)'});
     await page.screenshot({path:path.join(out,'builder-tooltip-light.png')});
     check('nested builder and its colour picker fit a narrow pane in the light theme');
+
+    await page.evaluate(() => {
+        fixture.builderPlayers.empty();
+        fixture.builderPlayers.add({isPlayer:false,enabled:true,count:4,level:5});
+    });
+    for (const [xp,next,previous] of [[0,'2,000 XP to Low','Lowest bracket'],
+        [2000,'1,000 XP to Moderate','Remove 1 XP for Trivial'],
+        [2999,'1 XP to Moderate','Remove 1,000 XP for Trivial'],
+        [3000,'1,400 XP to High','Remove 1 XP for Low'],
+        [3700,'700 XP to High','Remove 701 XP for Low'],
+        [4400,'Highest bracket','Remove 1 XP for Moderate']]) {
+        await page.evaluate(xp => {
+            fixture.encounter.empty();
+            fixture.encounter.add({name:'Boundary test',xp});
+        },xp);
+        assert.equal(await page.locator('.next-bracket').innerText(),next);
+        assert.equal(await page.locator('.previous-bracket').innerText(),previous);
+    }
+    assert.match(await page.locator('.difficulty-legend').innerText(),/2,000–<3,000 XP/);
+    assert.equal(await page.locator('.difficulty-legend small').count(),4);
+    await page.evaluate(() => fixture.builderPlayers.empty());
+    assert.equal(await page.locator('.difficulty-distance').count(),0);
+    check('builder retains visible bracket ranges and exact XP distances in both directions, clearing them without party levels');
 }

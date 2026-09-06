@@ -31,7 +31,7 @@
             <strong>{$levels.length ? difficulty.displayName : "Add party levels"}</strong><span>{formattedXp}</span>
         </div>
     {/if}
-    <DifficultyGauge {difficulty} {thresholds} system={plugin.data.rpgSystem}
+    <DifficultyGauge detailed {difficulty} {thresholds} system={plugin.data.rpgSystem}
         labels={thresholds.map((threshold) => threshold.displayName)} {formattedXp} />
     <p class="party-context">
         {$levels.length} enabled player{$levels.length === 1 ? "" : "s"}{#if filtered} · {filtered} allied creature{filtered === 1 ? "" : "s"} excluded{/if}
