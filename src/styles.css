@@ -14,6 +14,11 @@
     color: var(--text-normal);
 }
 
+.initiative-tracker.encounter-builder .built-encounter::before,
+.initiative-tracker.encounter-builder .built-encounter::after {
+    display: none;
+}
+
 .tooltip.coz-initiative-tooltip {
     --background-modifier-message: var(--background-secondary);
     background: var(--background-secondary);

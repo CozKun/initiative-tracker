@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.23-beta.6 — 2026-09-06 (beta only)
+
+* Added a full-width divider and breathing room below the builder's encounter header. The divider uses the theme's border colour and replaces decorative heading stubs on that title.
+
 ### 13.0.23-beta.5 — 2026-09-06 (beta only)
 
 * Restored the initiative tracker's compact difficulty display: current difficulty, total XP, the banded bar and tier names. Thresholds remain available on hover; visible XP ranges and previous/next bracket distances stay in the encounter builder.

@@ -273,6 +273,9 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 1px solid var(--background-modifier-border);
     }
     .encounter-creatures {
         display: flex;
