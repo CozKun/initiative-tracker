@@ -185,7 +185,7 @@ try {
         assert.equal(await page.locator('.difficulty-caption strong').innerText(),tier);
         assert.match(await gauge.getAttribute('aria-valuetext'),new RegExp(tier));
     }
-    assert.match(await page.locator('.difficulty-band[data-tier=Low]').getAttribute('title'), /2,000 to below 3,000 XP/);
+    assert.match(await page.locator('.difficulty-band[data-tier=Low]').getAttribute('aria-description'), /2,000 to below 3,000 XP/);
     check("difficulty bands match real level-5 party thresholds, including each exact boundary");
     const systemChecks = await page.evaluate(() => {
         const system = fixture.getRpgSystem(fixture.plugin);
@@ -199,6 +199,18 @@ try {
         });
     });
     assert.equal(systemChecks,true); check("band boundaries hold across levels 1–20 and a mixed-level party");
+    for (const [xp,next,previous] of [[0,'2,000 XP to Low','Lowest bracket'],
+        [2000,'1,000 XP to Moderate','Remove 1 XP for Trivial'],
+        [2999,'1 XP to Moderate','Remove 1,000 XP for Trivial'],
+        [3000,'1,400 XP to High','Remove 1 XP for Low'],
+        [3700,'700 XP to High','Remove 701 XP for Low'],
+        [4400,'Highest bracket','Remove 1 XP for Moderate']]) {
+        await page.evaluate(xp => fixture.setDifficultyScenario([5,5,5,5],xp),xp);
+        assert.equal(await page.locator('.next-bracket').innerText(),next);
+        assert.equal(await page.locator('.previous-bracket').innerText(),previous);
+    }
+    assert.match(await page.locator('.difficulty-legend').innerText(),/2,000–<3,000 XP/);
+    check('visible bracket ranges and XP distances handle both directions and exact thresholds');
     await page.evaluate(() => fixture.setDifficultyScenario([5,5,5,5],44000));
     await page.waitForFunction(() => Number(document.querySelector('[role=meter]')?.getAttribute('aria-valuenow')) > 98);
     assert.equal(await page.locator('.difficulty-caption strong').innerText(),"High");
@@ -209,6 +221,7 @@ try {
     assert.equal(await page.locator('.difficulty-caption strong').innerText(),"Add party levels");
     assert.match(await page.locator('.difficulty-caption span').innerText(),/44,000 XP/);
     assert.equal(await gauge.count(),0); check("removing the party clears the difficulty indicator");
+    assert.equal(await page.locator('.difficulty-distance').count(),0);
     await page.evaluate(() => fixture.setDifficultyScenario([5,5,5,5],3700));
     await page.waitForFunction(() => Math.abs(Number(document.querySelector('[role=meter]')?.getAttribute('aria-valuenow'))-55)<.01);
     await page.locator('.difficulty-bands-container').screenshot({path:path.join(out,'difficulty-bands.png')});

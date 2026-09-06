@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tooltip } from "src/ui/tooltip";
     import { setIcon } from "obsidian";
     import { getContext } from "svelte";
     import { get } from "svelte/store";
@@ -28,9 +29,9 @@
     const icon = (node: HTMLElement, name: string) => setIcon(node, name);
 </script>
 
-<section class="builder-party" aria-label="Encounter party">
+<section class="builder-party" aria-label="Encounter party" data-tooltip-classes="coz-initiative-tooltip">
     <details class="party-panel" bind:open on:toggle={rememberOpen}>
-        <summary title="Expand or collapse the party section.">
+        <summary use:tooltip={{ text: "Expand or collapse the party section.", label: "Party" }}>
             <h5>Party</h5>
             <span class="party-count">{$levels.length} included</span>
             <span class="chevron" class:expanded={open} use:icon={"chevron-right"} aria-hidden="true" />
@@ -39,8 +40,8 @@
             {#if parties.length}
                 <label class="party-selector">
                     <span>Saved party</span>
-                    <select aria-label="Select a party" value={selectedParty}
-                        title="Choose named characters from a saved party. Any unnamed player groups stay in place."
+                    <select value={selectedParty}
+                        use:tooltip={{ text: "Choose named characters from a saved party. Any unnamed player groups stay in place.", label: "Select a party" }}
                         on:change={(event) => players.switchParty(event.currentTarget.value ? partyMembers(event.currentTarget.value) : [])}>
                         <option value="">Custom / unnamed party</option>
                         {#each parties as entry}<option value={entry.name}>{entry.name}</option>{/each}
@@ -51,39 +52,35 @@
                 {#each $party as player (player.name)}
                     <div class="player-card named-player" class:excluded={!player.enabled}>
                         <input type="checkbox" checked={player.enabled}
-                            aria-label={player.enabled ? "Exclude from encounter difficulty" : "Include in encounter difficulty"}
-                            title={`Include ${player.name} in the party's difficulty calculation.`}
+                            use:tooltip={{ text: `Include ${player.name} in the party's difficulty calculation.`, label: player.enabled ? "Exclude from encounter difficulty" : "Include in encounter difficulty" }}
                             on:change={() => players.toggleEnabled(player)} />
                         <span class="player-name">{player.name}</span>
-                        <span class="level-badge" title="Character level used for encounter difficulty.">Level {player.level}</span>
+                        <span class="level-badge" use:tooltip={"Character level used for encounter difficulty."}>Level {player.level}</span>
                     </div>
                 {/each}
                 {#each $generics as player, index}
                     <div class="player-card generic-player" class:excluded={!player.enabled}>
                         <input type="checkbox" checked={player.enabled}
-                            aria-label={player.enabled ? "Exclude from encounter difficulty" : "Include in encounter difficulty"}
-                            title="Include this group in the party's difficulty calculation."
+                            use:tooltip={{ text: "Include this group in the party's difficulty calculation.", label: player.enabled ? "Exclude from encounter difficulty" : "Include in encounter difficulty" }}
                             on:change={() => players.toggleEnabled(player)} />
                         <label class="number-field"><span>Players</span>
                             <input type="number" value={player.count} min="1" step="1"
-                                aria-label={`Number of players in group ${index + 1}`}
-                                title="How many players of this level to include in the difficulty calculation."
+                                use:tooltip={{ text: "How many players of this level to include in the difficulty calculation.", label: `Number of players in group ${index + 1}` }}
                                 on:input={(event) => players.set(player, Number(event.currentTarget.value))} />
                         </label>
                         <label class="number-field"><span>Level</span>
                             <input type="number" value={player.level} min="1" step="1"
-                                aria-label={`Level of player group ${index + 1}`}
-                                title="Level of each player in this group."
+                                use:tooltip={{ text: "Level of each player in this group.", label: `Level of player group ${index + 1}` }}
                                 on:input={(event) => players.setLevel(player, Number(event.currentTarget.value))} />
                         </label>
-                        <button type="button" class="remove-player clickable-icon" aria-label="Remove this player group"
-                            title="Remove this group of unnamed players." use:icon={"x"} on:click={() => players.remove(player)} />
+                        <button type="button" class="remove-player clickable-icon"
+                            use:tooltip={{ text: "Remove this group of unnamed players.", label: "Remove this player group" }} use:icon={"x"} on:click={() => players.remove(player)} />
                     </div>
                 {/each}
             </div>
             {#if !$players.length}<p class="empty-party">Choose a party or add players to calculate difficulty.</p>{/if}
-            <button type="button" class="add-players" aria-label="Add unnamed players"
-                title="Add a group of players at the same level for encounter planning." on:click={add}>
+            <button type="button" class="add-players"
+                use:tooltip={{ text: "Add a group of players at the same level for encounter planning.", label: "Add unnamed players" }} on:click={add}>
                 <span use:icon={"plus"} aria-hidden="true" /> Add players
             </button>
         </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tooltip } from "src/ui/tooltip";
     import { setIcon } from "obsidian";
     import { convertFraction, FRIENDLY, getRpgSystem, HIDDEN } from "src/utils";
     import { encounter } from "../../stores/encounter";
@@ -24,36 +25,34 @@
 
 <div class="encounter-creature-card">
     <div class="creature-heading">
-        <button type="button" class="creature-name" title="Open creature details. Ctrl/Cmd-click opens a new pane." on:click={open}>{creature.name}</button>
+        <button type="button" class="creature-name" use:tooltip={"Open creature details. Ctrl/Cmd-click opens a new pane."} on:click={open}>{creature.name}</button>
         <span class="quantity">×{count}</span>
-        {#if insignificant}<span use:icon={"baby"} title="This creature's challenge rating is well below the average enabled party level." />{/if}
-        {#if challenge}<span use:icon={"skull"} title="This creature's challenge rating is well above the average enabled party level." />{/if}
+        {#if insignificant}<span use:icon={"baby"} use:tooltip={"This creature's challenge rating is well below the average enabled party level."} />{/if}
+        {#if challenge}<span use:icon={"skull"} use:tooltip={"This creature's challenge rating is well above the average enabled party level."} />{/if}
         <div class="row-actions">
             <button type="button" class="clickable-icon" class:selected={creature.hidden} aria-pressed={!!creature.hidden}
-                aria-label={creature.hidden ? `Reveal ${creature.name} in player view` : `Hide ${creature.name} from player view`}
-                title="Toggle visibility in the player view. Hidden enemies still count towards difficulty." use:icon={HIDDEN} on:click={() => toggle("hidden")} />
+                use:tooltip={{ text: "Toggle visibility in the player view. Hidden enemies still count towards difficulty.", label: creature.hidden ? `Reveal ${creature.name} in player view` : `Hide ${creature.name} from player view` }} use:icon={HIDDEN} on:click={() => toggle("hidden")} />
             <button type="button" class="clickable-icon" class:selected={creature.friendly} aria-pressed={!!creature.friendly}
-                aria-label={creature.friendly ? `Make ${creature.name} an enemy` : `Make ${creature.name} an ally`}
-                title="Toggle ally status for this group. Allies are excluded from encounter difficulty." use:icon={FRIENDLY} on:click={() => toggle("friendly")} />
-            <button type="button" class="clickable-icon" aria-label={`Remove all ${creature.name}`} title="Remove this entire creature group from the encounter."
+                use:tooltip={{ text: "Toggle ally status for this group. Allies are excluded from encounter difficulty.", label: creature.friendly ? `Make ${creature.name} an enemy` : `Make ${creature.name} an ally` }} use:icon={FRIENDLY} on:click={() => toggle("friendly")} />
+            <button type="button" class="clickable-icon"  use:tooltip={{ text: "Remove this entire creature group from the encounter.", label: `Remove all ${creature.name}` }}
                 use:icon={"trash-2"} on:click={() => encounter.delete(creature)} />
         </div>
     </div>
     <div class="creature-info">
-        <div class="quantity-controls" aria-label={`${creature.name} quantity`}>
-            <button type="button" class="clickable-icon" aria-label={`Remove last ${creature.name}`} title="Remove the last copy, keeping the earlier copies and their colours."
+        <div class="quantity-controls" aria-label={`${creature.name} quantity`} data-tooltip-classes="coz-initiative-tooltip">
+            <button type="button" class="clickable-icon"  use:tooltip={{ text: "Remove the last copy, keeping the earlier copies and their colours.", label: `Remove last ${creature.name}` }}
                 use:icon={"minus-circle"} on:click={() => encounter.remove(creature)} />
-            <input type="number" min="1" step="1" value={count} aria-label={`Number of ${creature.name}`}
-                title="Number of copies. Reducing this removes copies from the end."
+            <input type="number" min="1" step="1" value={count}
+                use:tooltip={{ text: "Number of copies. Reducing this removes copies from the end.", label: `Number of ${creature.name}` }}
                 on:change={(event) => { encounter.set(creature, Number(event.currentTarget.value)); event.currentTarget.value = String(count); }} />
-            <button type="button" class="clickable-icon" aria-label={`Add another ${creature.name}`} title="Add another copy with its own Mini Colour Indicator."
+            <button type="button" class="clickable-icon"  use:tooltip={{ text: "Add another copy with its own Mini Colour Indicator.", label: `Add another ${creature.name}` }}
                 use:icon={"plus-circle"} on:click={() => encounter.add(creature)} />
         </div>
-        <span class="stats" title="Difficulty value per creature, before any encounter adjustments.">
+        <span class="stats" use:tooltip={"Difficulty value per creature, before any encounter adjustments."}>
             {#each rpgSystem.getAdditionalCreatureDifficultyStats(creature, $levels) as stat}<span>{stat}</span>{/each}
             <span>{rpgSystem.formatDifficultyValue(perCreature, true)} each</span>
             <span aria-hidden="true">·</span>
-            <strong class="group-total" title={creature.friendly
+            <strong class="group-total" use:tooltip={creature.friendly
                 ? "Total for this group before encounter adjustments. Allies are excluded from encounter difficulty."
                 : "Per-creature value multiplied by the number of copies, before encounter adjustments."}>
                 {rpgSystem.formatDifficultyValue(perCreature * count, true)} total
@@ -62,14 +61,14 @@
         {#if creature.hidden}<span class="flag">Hidden</span>{/if}
         {#if creature.friendly}<span class="flag">Ally</span>{/if}
     </div>
-    <div class="creature-copies" role="group" aria-label={`${creature.name} copies`}>
+    <div class="creature-copies" role="group" aria-label={`${creature.name} copies`} data-tooltip-classes="coz-initiative-tooltip">
         {#each colours as colour, index}
             <div class="creature-copy">
                 <span>{creature.name} {index + 1}</span>
                 <MiniColourPicker colour={colour ?? undefined} label={`Mini Colour Indicator: ${creature.name} ${index + 1}`}
                     onChange={(value) => encounter.setColour(creature, index, value)} />
-                <button type="button" class="clickable-icon remove-copy" aria-label={`Remove ${creature.name} ${index + 1}`}
-                    title="Remove only this copy and its colour indicator." use:icon={"x"} on:click={() => encounter.remove(creature, index)} />
+                <button type="button" class="clickable-icon remove-copy"
+                    use:tooltip={{ text: "Remove only this copy and its colour indicator.", label: `Remove ${creature.name} ${index + 1}` }} use:icon={"x"} on:click={() => encounter.remove(creature, index)} />
             </div>
         {/each}
     </div>

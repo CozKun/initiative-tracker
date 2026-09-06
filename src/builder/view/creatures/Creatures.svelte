@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tooltip } from "src/ui/tooltip";
     import Creature from "./Creature.svelte";
     import { getContext } from "svelte";
     import Filters from "../filters/Filters.svelte";
@@ -143,7 +144,7 @@
         <thead>
             {#each $allHeaders as header (header.text)}
                 <th
-                    title={header.field === "xp" ? "XP per creature. Click to sort by XP." : `Sort by ${header.text}`}
+                    use:tooltip={header.field === "xp" ? "XP per creature. Click to sort by XP." : `Sort by ${header.text}`}
                     on:click={() => {
                         table.sort(header);
                     }}

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.23-beta.3 — 2026-09-06 (beta only)
+
+* D&D 5.5e difficulty bands now show each bracket's XP range and highlight the current bracket. The XP needed to reach the next bracket or drop into the previous one stays visible even when Party budgets is collapsed.
+* Previous-bracket amounts account for the inclusive lower threshold: at a bracket's minimum, removing one XP drops into the preceding bracket. Trivial and High clearly identify the ends of the scale, and empty-party displays omit unavailable comparisons.
+* Replaced browser title tooltips in the builder and shared controls with Obsidian's tooltip engine. A shared style uses the active theme's panel colours, borders, spacing and shadow. Existing builder button and bestiary tooltips use the same style.
+* Kept accessible action names separate from longer tooltip explanations, including labels that change when a creature becomes an ally or a player is included/excluded.
+
+Validation: production build and 33 browser interaction checks, including exact bracket boundaries, visible XP distances, preserved action names and tooltip colours in dark/light themes. Stable remains 13.0.22.
+
 ### 13.0.23-beta.2 — 2026-09-06 (beta only)
 
 * Added a sortable XP column to the bestiary table, using the selected system's XP calculation, including CR fallback and explicit zero XP. Existing column customisations are preserved; XP is added once and can subsequently be removed through Edit Headers.

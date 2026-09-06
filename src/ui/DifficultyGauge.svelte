@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tooltip } from "src/ui/tooltip";
     import { tweened } from "svelte/motion";
     import { cubicOut } from "svelte/easing";
     import { dnd55DifficultyScale, type DifficultyBand } from "src/utils/difficulty-scale";
@@ -22,6 +23,10 @@
             ? `${band.name}: ${band.min.toLocaleString()} XP and above. High has no upper limit.`
             : `${band.name}: ${band.min.toLocaleString()} to below ${band.max.toLocaleString()} XP.`;
     }
+    function bandRange(band: DifficultyBand) {
+        return band.max === null ? `${band.min.toLocaleString()}+ XP`
+            : `${band.min.toLocaleString()}–<${band.max.toLocaleString()} XP`;
+    }
 </script>
 
 {#if banded}
@@ -31,26 +36,33 @@
             <span>{formattedXp}</span>
         </div>
         {#if ready}
-            <div class="difficulty-bands" role="meter" aria-label="Encounter difficulty"
+            <div class="difficulty-bands" role="meter"
                 aria-valuemin="0" aria-valuemax="100" aria-valuenow={$difficultyBar * 100}
-                aria-valuetext={`${difficulty.displayName}, ${formattedXp}. ${summary}`} title={summary}>
+                aria-valuetext={`${difficulty.displayName}, ${formattedXp}. ${summary}`} use:tooltip={{ text: summary, label: "Encounter difficulty" }}>
                 {#each scale.bands as band}
                     <span class="difficulty-band" data-tier={band.name} style:width={`${band.width}%`}
-                        title={bandHelp(band)} />
+                        use:tooltip={bandHelp(band)} />
                 {/each}
                 <span class="difficulty-marker" style:left={`${$difficultyBar * 100}%`} aria-hidden="true" />
             </div>
-            <div class="difficulty-legend" aria-label="Difficulty bands">
+            <div class="difficulty-legend" aria-label="Difficulty bands" data-tooltip-classes="coz-initiative-tooltip">
                 {#each scale.bands as band}
-                    <span title={bandHelp(band)}><i data-tier={band.name} aria-hidden="true" />{band.name}</span>
+                    <span class="legend-item" class:current={scale.current.name === band.name} use:tooltip={bandHelp(band)}>
+                        <span class="legend-name"><i data-tier={band.name} aria-hidden="true" />{band.name}</span>
+                        <small>{bandRange(band)}</small>
+                    </span>
                 {/each}
             </div>
+            <div class="difficulty-distance" aria-label="XP to neighbouring difficulty brackets" data-tooltip-classes="coz-initiative-tooltip">
+                <span class="next-bracket">{#if scale.next}<strong>{scale.next.add.toLocaleString()} XP</strong> to {scale.next.name}{:else}Highest bracket{/if}</span>
+                <span class="previous-bracket">{#if scale.previous}Remove <strong>{scale.previous.remove.toLocaleString()} XP</strong> for {scale.previous.name}{:else}Lowest bracket{/if}</span>
+            </div>
         {:else}
-            <div class="difficulty-empty" title={summary} />
+            <div class="difficulty-empty" use:tooltip={summary} />
         {/if}
     </div>
 {:else}
-<div class="difficulty-bar-container" aria-label={summary}>
+<div class="difficulty-bar-container" aria-label={summary} data-tooltip-classes="coz-initiative-tooltip">
     <span>{labels?.[0] ?? ""}</span>
     <span
         ><meter
@@ -82,10 +94,16 @@
     .difficulty-marker { position: absolute; top: -3px; bottom: -3px; width: 3px; transform: translateX(-50%);
         background: var(--text-normal); border: 1px solid var(--background-primary); border-radius: 2px;
         box-shadow: 0 0 0 1px var(--text-normal); pointer-events: none; }
-    .difficulty-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.35rem 0.55rem;
+    .difficulty-legend { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.35rem;
         margin-top: 0.45rem; color: var(--text-muted); font-size: var(--font-ui-smaller); }
-    .difficulty-legend span { display: inline-flex; align-items: center; gap: 0.25rem; }
+    .legend-item { display: flex; flex-direction: column; gap: 0.2rem; padding-bottom: 0.25rem; border-bottom: 2px solid transparent; }
+    .legend-item.current { color: var(--text-normal); border-bottom-color: var(--text-muted); }
+    .legend-name { display: inline-flex; align-items: center; gap: 0.25rem; }
+    .legend-item small { font-family: inherit; font-size: 0.9em; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
     .difficulty-legend i { width: 0.45rem; height: 0.45rem; border-radius: 50%; }
+    .difficulty-distance { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.3rem 0.7rem; margin-top: 0.5rem;
+        color: var(--text-muted); font-size: var(--font-ui-smaller); }
+    .difficulty-distance strong { color: var(--text-normal); font-weight: 500; }
     .difficulty-empty { height: 8px; border-radius: 4px; background: var(--background-modifier-border); }
     .difficulty-bar-container {
         display: grid;

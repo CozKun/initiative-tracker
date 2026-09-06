@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tooltip, tooltipOptions } from "src/ui/tooltip";
     import type { SRDMonster } from "src/types/creatures";
     import { ExtraButtonComponent, setIcon } from "obsidian";
     import { getContext } from "svelte";
@@ -18,7 +19,7 @@
     export let creature: SRDMonster;
     $: xp = table.xpFor(creature, $levels);
     const add = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("plus-with-circle").setTooltip("Add a copy to the encounter");
+        new ExtraButtonComponent(node).setIcon("plus-with-circle").setTooltip("Add a copy to the encounter", tooltipOptions);
     };
     function stringify(
         property: Record<string, any> | string | any[] | number | boolean,
@@ -80,7 +81,7 @@
             <div use:add on:click={() => encounter.add(creature)} />
             <!-- svelte-ignore a11y-mouse-events-have-key-events -->
             <div
-                title="Open creature details. Ctrl/Cmd-click opens a new pane."
+                use:tooltip={"Open creature details. Ctrl/Cmd-click opens a new pane."}
                 class="setting-item-name creature-name"
                 on:click={(evt) =>
                     plugin.openCombatant(CreatureCreator.from(creature), evt.ctrlKey || evt.metaKey)}
@@ -90,20 +91,20 @@
                     <div
                         class="contains-icon"
                         use:baby
-                        aria-label={"This creature is significantly under the average party level and might not contribute much to the fight."}
+                        use:tooltip={"This creature is significantly under the average party level and might not contribute much to the fight."}
                     />
                 {/if}
                 {#if challenge}
                     <div
                         class="contains-icon"
                         use:skull
-                        aria-label={"This creature is significantly over the average party level and might prove a challenge."}
+                        use:tooltip={"This creature is significantly over the average party level and might prove a challenge."}
                     />
                 {/if}
             </div>
             <div class="setting-item-description">
                 {#if creature.source?.length}
-                    <span aria-label={getTooltip(creature.source)}>
+                    <span use:tooltip={getTooltip(creature.source)}>
                         {getSource(creature.source)}
                     </span>
                 {/if}
@@ -115,7 +116,7 @@
     </td>
     {#each $table as header}
         {#if header.field === "xp"}
-            <td class="creature-xp" title="XP per creature. Uses the selected RPG system's XP calculation; a dash means no XP value is available.">
+            <td class="creature-xp" use:tooltip={"XP per creature. Uses the selected RPG system's XP calculation; a dash means no XP value is available."}>
                 <Nullable str={xp === null ? DEFAULT_UNDEFINED : xp.toLocaleString()} />
             </td>
         {:else}

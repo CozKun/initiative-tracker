@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tooltipOptions } from "src/ui/tooltip";
     import {
         ExtraButtonComponent,
         Menu,
@@ -71,20 +72,20 @@
         if (startIcon) {
             if (!items.length) {
                 startIcon.setDisabled(true);
-                startIcon.setTooltip("");
+                startIcon.setTooltip("", tooltipOptions);
             } else {
                 startIcon.setDisabled(false);
-                startIcon.setTooltip("Start this encounter in the initiative tracker");
+                startIcon.setTooltip("Start this encounter in the initiative tracker", tooltipOptions);
             }
         }
     }
     const editIcon = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("pencil").setTooltip("Rename this encounter");
+        new ExtraButtonComponent(node).setIcon("pencil").setTooltip("Rename this encounter", tooltipOptions);
     };
-    const nameSaveIcon = (node: HTMLElement) => { new ExtraButtonComponent(node).setIcon("check").setTooltip("Apply encounter name"); };
+    const nameSaveIcon = (node: HTMLElement) => { new ExtraButtonComponent(node).setIcon("check").setTooltip("Apply encounter name", tooltipOptions); };
     let saveButton: ExtraButtonComponent;
     const saveIcon = (node: HTMLElement) => {
-        saveButton = new ExtraButtonComponent(node).setIcon("save").setTooltip("Save this encounter and its Mini Colour Indicators");
+        saveButton = new ExtraButtonComponent(node).setIcon("save").setTooltip("Save this encounter and its Mini Colour Indicators", tooltipOptions);
     };
     $: saveButton?.setDisabled($encounter.size == 0);
     const save = () => {
@@ -149,7 +150,7 @@
     };
 
     const cancelIcon = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("cross-in-box").setTooltip("Cancel renaming");
+        new ExtraButtonComponent(node).setIcon("cross-in-box").setTooltip("Cancel renaming", tooltipOptions);
     };
     let exportIcon: ExtraButtonComponent;
     const exp = (node: HTMLElement) => {
@@ -159,10 +160,10 @@
         if (exportIcon) {
             if (!items.length) {
                 exportIcon.setDisabled(true);
-                exportIcon.setTooltip("");
+                exportIcon.setTooltip("", tooltipOptions);
             } else {
                 exportIcon.setDisabled(false);
-                exportIcon.setTooltip("Copy an encounter block, including Mini Colour Indicators, to paste into a note");
+                exportIcon.setTooltip("Copy an encounter block, including Mini Colour Indicators, to paste into a note", tooltipOptions);
             }
         }
     }
@@ -171,7 +172,7 @@
     const loadIcon = (node: HTMLElement) => {
         loadButton = new ExtraButtonComponent(node)
             .setIcon("upload")
-            .setTooltip("Load a saved encounter, replacing the current builder contents");
+            .setTooltip("Load a saved encounter, replacing the current builder contents", tooltipOptions);
     };
     $: loadButton?.setDisabled(Object.keys(plugin.data.encounters).length == 0);
     const load = (evt: MouseEvent) => {
@@ -195,7 +196,7 @@
     const clear = (node: HTMLElement) => {
         new ExtraButtonComponent(node)
             .setIcon("eraser")
-            .setTooltip("Clear the encounter creatures; keep the selected party");
+            .setTooltip("Clear the encounter creatures; keep the selected party", tooltipOptions);
     };
     const copy = async () => {
         const enc: {

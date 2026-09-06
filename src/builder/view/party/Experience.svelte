@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tooltip } from "src/ui/tooltip";
     import { encounter } from "../../stores/encounter";
     import { players } from "../../stores/players";
     import { getRpgSystem } from "src/utils";
@@ -23,23 +24,23 @@
     };
 </script>
 
-<section class="builder-difficulty" aria-label="Encounter difficulty summary">
+<section class="builder-difficulty" aria-label="Encounter difficulty summary" data-tooltip-classes="coz-initiative-tooltip">
     <div class="section-heading"><h5>Encounter difficulty</h5><span>{rpgSystem.displayName}</span></div>
     {#if plugin.data.rpgSystem !== "dnd5e-55"}
-        <div class="difficulty-summary" title={difficulty.summary}>
+        <div class="difficulty-summary" use:tooltip={difficulty.summary}>
             <strong>{$levels.length ? difficulty.displayName : "Add party levels"}</strong><span>{formattedXp}</span>
         </div>
     {/if}
     <DifficultyGauge {difficulty} {thresholds} system={plugin.data.rpgSystem}
         labels={thresholds.map((threshold) => threshold.displayName)} {formattedXp} />
-    <p class="party-context" title="Only enabled players with a level count towards the party's difficulty thresholds. Allied creatures are excluded; hidden enemies still count.">
+    <p class="party-context" use:tooltip={"Only enabled players with a level count towards the party's difficulty thresholds. Allied creatures are excluded; hidden enemies still count."}>
         {$levels.length} enabled player{$levels.length === 1 ? "" : "s"}{#if filtered} · {filtered} allied creature{filtered === 1 ? "" : "s"} excluded{/if}
     </p>
     <details bind:open on:toggle={rememberOpen}>
-        <summary title="Show the party's difficulty thresholds and calculation details.">Party budgets</summary>
+        <summary use:tooltip={"Show the party's difficulty thresholds and calculation details."}>Party budgets</summary>
         <div class="thresholds">
             {#each thresholds as budget}
-                <div title={`The ${budget.displayName} threshold for all enabled players combined.`}>
+                <div use:tooltip={`The ${budget.displayName} threshold for all enabled players combined.`}>
                     <span>{budget.displayName}</span><strong>{rpgSystem.formatDifficultyValue(budget.minValue, true)}</strong>
                 </div>
             {/each}

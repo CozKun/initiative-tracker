@@ -1,1 +1,15 @@
 @import "./main.css";
+
+.tooltip.coz-initiative-tooltip {
+    --background-modifier-message: var(--background-secondary);
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m);
+    padding: 0.5rem 0.65rem;
+    box-shadow: var(--shadow-s);
+    max-width: min(320px, calc(100vw - 24px));
+    line-height: 1.45;
+    font-weight: normal;
+    text-align: left;
+}

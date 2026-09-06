@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tooltip } from "src/ui/tooltip";
     import { setIcon } from "obsidian";
     import { getContext, tick } from "svelte";
     import type InitiativeTracker from "src/main";
@@ -142,10 +143,10 @@
         class="base-colour-swatch"
         class:unset={!colour}
         style:background-color={colour ?? "transparent"}
-        title={colour
+        use:tooltip={{ text: colour
             ? `${label}: ${colour}. Click to change or remove.`
-            : `${label}: no colour. Click to choose.`}
-        aria-label={label}
+            : `${label}: no colour. Click to choose.`, label: label }}
+
         aria-haspopup="dialog"
         aria-expanded={open}
         on:pointerdown|stopPropagation
@@ -156,7 +157,7 @@
         <div
             class="picker"
             role="dialog"
-            aria-label="Mini Colour Indicator picker"
+            aria-label="Mini Colour Indicator picker" data-tooltip-classes="coz-initiative-tooltip"
             use:popover={{ anchor, close: () => (open = false) }}
             on:pointerdown|stopPropagation
             on:click|stopPropagation
@@ -182,7 +183,7 @@
                 min="0"
                 max="359"
                 value={hue}
-                aria-label="Hue"
+                aria-label="Hue" data-tooltip-classes="coz-initiative-tooltip"
                 on:input={updateHue}
             />
 
@@ -197,22 +198,22 @@
                     type="text"
                     value={draft}
                     maxlength="7"
-                    aria-label="Hex colour"
+                    aria-label="Hex colour" data-tooltip-classes="coz-initiative-tooltip"
                     on:change={updateHex}
                 />
                 <button
                     type="button"
                     class="clickable-icon"
-                    title="Apply colour"
-                    aria-label="Apply colour"
+                    use:tooltip={{ text: "Apply colour", label: "Apply colour" }}
+
                     use:checkIcon
                     on:click={() => apply()}
                 />
                 <button
                     type="button"
                     class="clickable-icon"
-                    title="Cancel"
-                    aria-label="Cancel"
+                    use:tooltip={{ text: "Cancel", label: "Cancel" }}
+
                     use:cancelIcon
                     on:click={() => (open = false)}
                 />
@@ -223,7 +224,7 @@
                     <div class="recent-swatches">
                         {#each recent as colour}
                             <button type="button" class="recent-swatch" style:background-color={colour}
-                                title={colour} aria-label={`Use recent colour ${colour}`}
+                                use:tooltip={{ text: colour, label: `Use recent colour ${colour}` }}
                                 on:click={() => apply(colour)} />
                         {/each}
                     </div>

@@ -63,7 +63,7 @@ export async function runBuilderChecks(page, url, out, check) {
     assert.equal(await page.locator('.creature-copy').count(),3);
     assert.equal(await page.getByLabel('Number of Goblin',{exact:true}).inputValue(),'3');
     assert.match(await page.locator('.party-context').innerText(),/4 enabled players/);
-    assert.match(await page.locator('.difficulty-band[data-tier=Low]').getAttribute('title'),/200 to below 300 XP/);
+    assert.match(await page.locator('.difficulty-band[data-tier=Low]').getAttribute('aria-description'),/200 to below 300 XP/);
     assert.match(await page.locator('.difficulty-caption').innerText(),/Trivial\s+150 XP/);
     assert.match(await page.locator('.stats').innerText(),/50 XP each\s+·\s+150 XP total/);
     check('builder adds nested copies and counts all four unnamed players in party budgets');
@@ -89,7 +89,7 @@ export async function runBuilderChecks(page, url, out, check) {
     await page.getByRole('button',{name:'Make Goblin an ally',exact:true}).click();
     assert.match(await page.locator('.difficulty-caption').innerText(),/0 XP/);
     assert.equal((await page.locator('.group-total').innerText()).trim(),'150 XP total');
-    assert.match(await page.locator('.group-total').getAttribute('title'),/Allies are excluded/);
+    assert.match(await page.locator('.group-total').getAttribute('aria-description'),/Allies are excluded/);
     assert.match(await page.locator('.party-context').innerText(),/3 allied creatures excluded/);
     assert.deepEqual(await page.evaluate(() => fixture.catalogueGoblin),{name:'Goblin',hp:30,ac:14,cr:'1/4',xp:50});
     await page.getByRole('button',{name:'Make Goblin an enemy',exact:true}).click();
@@ -146,7 +146,7 @@ export async function runBuilderChecks(page, url, out, check) {
 
     await page.evaluate(() => { fixture.builderPlayers.empty(); fixture.builderPlayers.add({isPlayer:false,enabled:true,count:4,level:1}); });
     await page.getByLabel('Number of players in group 1',{exact:true}).fill('2');
-    assert.match(await page.locator('.difficulty-band[data-tier=Low]').getAttribute('title'),/100 to below 150 XP/);
+    assert.match(await page.locator('.difficulty-band[data-tier=Low]').getAttribute('aria-description'),/100 to below 150 XP/);
     assert.equal(await page.locator('.difficulty-caption strong').innerText(),'Moderate');
     await page.getByLabel('Level of player group 1',{exact:true}).fill('');
     assert.equal(await page.locator('.difficulty-caption strong').innerText(),'Add party levels');
@@ -156,12 +156,28 @@ export async function runBuilderChecks(page, url, out, check) {
     assert.equal(await page.locator('.difficulty-caption strong').innerText(),'Add party levels');
     await page.getByLabel('Include in encounter difficulty',{exact:true}).click();
     assert.equal(await page.locator('.difficulty-caption strong').innerText(),'Trivial');
-    await page.getByText('Party budgets',{exact:true}).click();
+    await page.locator('.builder-difficulty summary').click();
     assert.equal(await page.locator('.difficulty-bands').isVisible(),true);
-    await page.getByText('Party budgets',{exact:true}).click();
+    assert.equal(await page.locator('.difficulty-distance').isVisible(),true);
+    assert.equal(await page.locator('.next-bracket').innerText(),'50 XP to Low');
+    await page.locator('.builder-difficulty summary').click();
     check('budgets react to quantities, level edits and disabled players; collapsing details keeps the gauge visible');
 
     await page.getByLabel('Select a party',{exact:true}).selectOption('Test party');
+    const addCopy = page.getByRole('button',{name:'Add another Goblin',exact:true});
+    await addCopy.hover();
+    const tooltip = page.getByRole('tooltip');
+    await tooltip.waitFor();
+    assert.match(await tooltip.getAttribute('class'),/coz-initiative-tooltip/);
+    assert.match(await tooltip.innerText(),/Mini Colour Indicator/);
+    assert.equal(await addCopy.getAttribute('title'),null);
+    assert.equal(await page.locator('.builder-fixture [title]').count(),0);
+    assert.equal(await page.getByRole('button',{name:'Start this encounter in the initiative tracker',exact:true}).getAttribute('data-tooltip-classes'),'coz-initiative-tooltip');
+    const styled = await tooltip.evaluate(el => ({background:getComputedStyle(el).backgroundColor,text:getComputedStyle(el).color}));
+    assert.deepEqual(styled,{background:'rgb(41, 43, 50)',text:'rgb(229, 230, 236)'});
+    await page.screenshot({path:path.join(out,'builder-tooltip-dark.png')});
+    await page.mouse.move(0,0);
+    check('builder tooltips share the native host styling without browser titles or losing accessible action names');
     await page.locator('.builder-fixture').screenshot({path:path.join(out,'builder-nested.png')});
     await page.addStyleTag({content: ':root { --background-primary:#ece4d3; --background-secondary:#e4dbc8; --text-normal:#372e28; --text-muted:#675b4d; --text-faint:#aaa294; --background-modifier-border:#c4bba7; } body {background:#ece4d3;color:#372e28} button,input {color:inherit;background:var(--background-secondary)}'});
     await page.setViewportSize({width:390,height:800});
@@ -171,5 +187,10 @@ export async function runBuilderChecks(page, url, out, check) {
     assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 390 && bounds.y >= 0 && bounds.y + bounds.height <= 800);
     await page.screenshot({path:path.join(out,'builder-narrow-picker.png')});
     await page.getByLabel('Hex colour',{exact:true}).press('Escape');
+    await addCopy.hover();
+    await tooltip.waitFor();
+    assert.deepEqual(await tooltip.evaluate(el => ({background:getComputedStyle(el).backgroundColor,text:getComputedStyle(el).color})),
+        {background:'rgb(228, 219, 200)',text:'rgb(55, 46, 40)'});
+    await page.screenshot({path:path.join(out,'builder-tooltip-light.png')});
     check('nested builder and its colour picker fit a narrow pane in the light theme');
 }

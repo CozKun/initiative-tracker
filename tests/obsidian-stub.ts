@@ -6,6 +6,34 @@ export const setIcon = (node: HTMLElement, icon: string) => {
     node.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${shape}</svg>`;
 };
 export const addIcon = () => {};
+export function setTooltip(node: HTMLElement, text: string, options?: {classes?: string[]; delay?: number}) {
+    node.setAttribute("aria-label", text);
+    node.setAttribute("data-tooltip-classes", options?.classes?.join(" ") ?? "");
+    node.setAttribute("data-tooltip-delay", String(options?.delay ?? 0));
+}
+// Model the host's delegated aria-label tooltips, including class styling. The
+// production action calls Obsidian; positioning here is only a test-host adapter.
+let shownTooltip: HTMLElement | undefined;
+let tooltipTimer: ReturnType<typeof setTimeout>;
+const hideTooltip = () => { clearTimeout(tooltipTimer); shownTooltip?.remove(); shownTooltip = undefined; };
+document.addEventListener("mouseover", (event) => {
+    hideTooltip();
+    const target = (event.target as Element)?.closest<HTMLElement>("[aria-label]");
+    const text = target?.getAttribute("aria-label");
+    if (!text) return;
+    tooltipTimer = setTimeout(() => {
+        shownTooltip = document.createElement("div");
+        shownTooltip.className = `tooltip ${target.dataset.tooltipClasses ?? ""}`;
+        shownTooltip.setAttribute("role", "tooltip");
+        shownTooltip.textContent = text;
+        Object.assign(shownTooltip.style, {position:"fixed",zIndex:"9999",pointerEvents:"none",boxSizing:"border-box"});
+        document.body.append(shownTooltip);
+        const anchor = target.getBoundingClientRect(), bounds = shownTooltip.getBoundingClientRect();
+        shownTooltip.style.left = `${Math.max(8,Math.min(anchor.left,innerWidth-bounds.width-8))}px`;
+        shownTooltip.style.top = `${Math.max(8,Math.min(anchor.bottom+8,innerHeight-bounds.height-8))}px`;
+    }, Number(target.dataset.tooltipDelay) || 0);
+});
+document.addEventListener("mouseout", hideTooltip);
 export class Events { on() {} off() {} trigger() {} }
 export class TFile {}
 export class MarkdownRenderChild {}
@@ -47,7 +75,7 @@ export class ExtraButtonComponent {
     extraSettingsEl: HTMLButtonElement;
     constructor(node: HTMLElement) { this.extraSettingsEl = node.ownerDocument.createElement("button"); node.append(this.extraSettingsEl); }
     setIcon(icon: string) { setIcon(this.extraSettingsEl, icon); return this; }
-    setTooltip(text: string) { this.extraSettingsEl.title = text; this.extraSettingsEl.setAttribute("aria-label", text); return this; }
+    setTooltip(text: string, options?: {classes?: string[]}) { setTooltip(this.extraSettingsEl, text, options); return this; }
     setDisabled(disabled: boolean) { this.extraSettingsEl.disabled = disabled; return this; }
     onClick(callback: () => void) { this.extraSettingsEl.onclick = callback; return this; }
 }

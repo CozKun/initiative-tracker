@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tooltip } from "src/ui/tooltip";
     import { onMount } from "svelte";
     import type { Creature } from "src/utils/creature";
     import { tracker } from "../stores/tracker";
@@ -16,18 +17,18 @@
     onMount(() => input.focus());
 </script>
 
-<section class="quick-health" role="dialog" aria-label={`Health: ${session.creature.getName()}`}
+<section class="quick-health" role="dialog" aria-label={`Health: ${session.creature.getName()}`} data-tooltip-classes="coz-initiative-tooltip"
     use:popover={{ anchor: session.anchor, close, placement: "side" }}
     on:click|stopPropagation on:pointerdown|stopPropagation>
     <div class="heading">
         {#if session.creature.baseColor}
             <span class="mini-colour" style:background-color={session.creature.baseColor}
-                title={`Mini Colour Indicator: ${session.creature.baseColor}`} />
+                use:tooltip={`Mini Colour Indicator: ${session.creature.baseColor}`} />
         {/if}
         <strong>{session.creature.getName()}</strong>
-        <button class="close" type="button" aria-label="Cancel health adjustment" on:click={close}>×</button>
+        <button class="close" type="button" aria-label="Cancel health adjustment" data-tooltip-classes="coz-initiative-tooltip" on:click={close}>×</button>
     </div>
-    <div class="health-modes" aria-label="Health adjustment">
+    <div class="health-modes" aria-label="Health adjustment" data-tooltip-classes="coz-initiative-tooltip">
         <button type="button" class:selected={!heal} aria-pressed={!heal}
             on:click={() => { heal = false; input.focus(); }}>Damage</button>
         <button type="button" class:selected={heal} aria-pressed={heal}
@@ -35,7 +36,7 @@
     </div>
     <form on:submit|preventDefault={apply}>
         <input bind:this={input} bind:value={amount} type="text" inputmode="numeric"
-            autocomplete="off" placeholder="Amount" aria-label={heal ? "Healing amount" : "Damage amount"} />
+            autocomplete="off" placeholder="Amount" aria-label={heal ? "Healing amount" : "Damage amount"} data-tooltip-classes="coz-initiative-tooltip" />
         <button type="submit" class="mod-cta" disabled={!valid}>{heal ? "Heal" : "Damage"}</button>
     </form>
     <button type="button" class="effect-link" on:click={() => tracker.openEffect(session.creature)}>Apply effect…</button>
