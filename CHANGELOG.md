@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.23-beta.2 — 2026-09-06 (beta only)
+
+* Added a sortable XP column to the bestiary table, using the selected system's XP calculation, including CR fallback and explicit zero XP. Existing column customisations are preserved; XP is added once and can subsequently be removed through Edit Headers.
+* Nested creature groups show per-creature and total values together, such as **50 XP each · 150 XP total**. Totals update with quantity changes and explain when allies are excluded from encounter difficulty.
+* Refreshed the party section with compact character/group rows, inclusion checkboxes, labelled player-count and level fields, a saved-party selector, and a visible Add players button.
+* Fixed the party section's initial toggle event reversing its saved expansion setting. Opening the builder preserves that setting, and deliberate collapse/expand actions save the actual state.
+
+Validation: production build and 31 browser interaction checks, including party reopening, saved-party selection, computed XP sorting, group totals, and narrow layouts. Stable remains 13.0.22.
+
 ### 13.0.23-beta.1 — 2026-09-06 (beta only)
 
 * Encounter groups now show compact nested copies, each with its own Mini Colour Indicator and remove button. Quantity controls add or remove copies from the end; removing a specific copy keeps the other colours attached correctly.

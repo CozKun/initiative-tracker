@@ -12,6 +12,51 @@ export async function runBuilderChecks(page, url, out, check) {
         await page.getByLabel('Hex colour', {exact:true}).fill(value);
         await page.getByRole('button', {name:'Apply colour',exact:true}).click();
     };
+    const partyPanel = page.locator('.party-panel');
+    assert.equal(await partyPanel.getAttribute('open'),'');
+    assert.equal(await page.evaluate(() => fixture.plugin.data.builder.showParty),true);
+    await page.reload();
+    assert.equal(await partyPanel.getAttribute('open'),'');
+    await partyPanel.locator('summary').click();
+    await page.waitForFunction(() => fixture.plugin.data.builder.showParty === false);
+    await page.reload();
+    assert.equal(await partyPanel.getAttribute('open'),null);
+    await partyPanel.locator('summary').click();
+    await page.waitForFunction(() => fixture.plugin.data.builder.showParty === true);
+    await page.reload();
+    assert.equal(await partyPanel.getAttribute('open'),'');
+    await page.addStyleTag({content: 'main { width:min(820px, 100%); } h5 { font-size:14px; }'});
+    check('party initialisation does not invert its setting; explicit collapse and expand survive reopening');
+
+    await page.getByLabel('Select a party',{exact:true}).selectOption('Test party');
+    assert.equal(await page.locator('.named-player').count(),2);
+    assert.match(await page.locator('.party-count').innerText(),/6 included/);
+    await page.locator('.named-player').filter({hasText:'Aria'}).getByRole('checkbox').uncheck();
+    assert.match(await page.locator('.party-count').innerText(),/5 included/);
+    await page.getByLabel('Select a party',{exact:true}).selectOption('');
+    assert.equal(await page.locator('.named-player').count(),0);
+    assert.match(await page.locator('.party-count').innerText(),/4 included/);
+    check('saved party selection and individual inclusion controls retain unnamed player groups');
+
+    const bestiary = page.locator('.bestiary-test-table');
+    const xpCells = () => bestiary.locator('.creature-xp').allTextContents().then(values => values.map(value => value.trim()));
+    assert.equal(await bestiary.getByRole('button',{name:'XP',exact:true}).count(),1);
+    assert.deepEqual(await xpCells(),['50','0','450']);
+    await bestiary.getByRole('button',{name:'XP',exact:true}).click();
+    assert.deepEqual(await xpCells(),['0','50','450']);
+    await bestiary.getByRole('button',{name:'XP',exact:true}).click();
+    assert.deepEqual(await xpCells(),['450','50','0']);
+    assert.equal(await page.evaluate(() => {
+        const data = structuredClone(fixture.plugin.data);
+        data.builder.headers = [{text:'Custom',field:'type',type:0},{text:'CR',field:'cr',type:1}];
+        delete data.builder.xpColumnAdded;
+        const plugin = {...fixture.plugin,data,saveSettings() {}};
+        const first = fixture.createTable(plugin,[]);
+        if (fixture.get(first).map(h => h.text).join() !== 'Custom,CR,XP') return false;
+        first.setHeadersFromState(data.builder.headers.filter(h => h.field !== 'xp'));
+        return fixture.get(fixture.createTable(plugin,[])).every(h => h.field !== 'xp');
+    }),true);
+    check('bestiary XP uses explicit values, preserves zero, falls back to CR, sorts numerically and preserves custom headers');
     await page.getByRole('button',{name:'Add Goblin from bestiary',exact:true}).click();
     await page.getByRole('button',{name:'Add another Goblin',exact:true}).click();
     assert.equal(await page.locator('.encounter-creature-card').count(),1);
@@ -20,6 +65,7 @@ export async function runBuilderChecks(page, url, out, check) {
     assert.match(await page.locator('.party-context').innerText(),/4 enabled players/);
     assert.match(await page.locator('.difficulty-band[data-tier=Low]').getAttribute('title'),/200 to below 300 XP/);
     assert.match(await page.locator('.difficulty-caption').innerText(),/Trivial\s+150 XP/);
+    assert.match(await page.locator('.stats').innerText(),/50 XP each\s+·\s+150 XP total/);
     check('builder adds nested copies and counts all four unnamed players in party budgets');
 
     await colourButton(1).click();
@@ -29,6 +75,7 @@ export async function runBuilderChecks(page, url, out, check) {
     assert.deepEqual(await colours(),['#FF0000','#0000FF','#00FF00']);
     await page.getByRole('button',{name:'Remove Goblin 2',exact:true}).click();
     assert.deepEqual(await colours(),['#FF0000','#00FF00']);
+    assert.equal((await page.locator('.group-total').innerText()).trim(),'100 XP total');
     await page.getByRole('button',{name:'Add Goblin from bestiary',exact:true}).click();
     assert.deepEqual(await colours(),['#FF0000','#00FF00',null]);
     assert.equal(await page.locator('.encounter-creature-card').count(),1);
@@ -41,6 +88,8 @@ export async function runBuilderChecks(page, url, out, check) {
     assert.match(await page.locator('.difficulty-caption').innerText(),/150 XP/);
     await page.getByRole('button',{name:'Make Goblin an ally',exact:true}).click();
     assert.match(await page.locator('.difficulty-caption').innerText(),/0 XP/);
+    assert.equal((await page.locator('.group-total').innerText()).trim(),'150 XP total');
+    assert.match(await page.locator('.group-total').getAttribute('title'),/Allies are excluded/);
     assert.match(await page.locator('.party-context').innerText(),/3 allied creatures excluded/);
     assert.deepEqual(await page.evaluate(() => fixture.catalogueGoblin),{name:'Goblin',hp:30,ac:14,cr:'1/4',xp:50});
     await page.getByRole('button',{name:'Make Goblin an enemy',exact:true}).click();
@@ -112,6 +161,7 @@ export async function runBuilderChecks(page, url, out, check) {
     await page.getByText('Party budgets',{exact:true}).click();
     check('budgets react to quantities, level edits and disabled players; collapsing details keeps the gauge visible');
 
+    await page.getByLabel('Select a party',{exact:true}).selectOption('Test party');
     await page.locator('.builder-fixture').screenshot({path:path.join(out,'builder-nested.png')});
     await page.addStyleTag({content: ':root { --background-primary:#ece4d3; --background-secondary:#e4dbc8; --text-normal:#372e28; --text-muted:#675b4d; --text-faint:#aaa294; --background-modifier-border:#c4bba7; } body {background:#ece4d3;color:#372e28} button,input {color:inherit;background:var(--background-secondary)}'});
     await page.setViewportSize({width:390,height:800});

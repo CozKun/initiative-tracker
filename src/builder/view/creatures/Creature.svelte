@@ -10,12 +10,13 @@
     import type InitiativeTracker from "src/main";
 
     const { players } = encounter;
-    const { average } = players;
+    const { average, levels } = players;
 
     const plugin = getContext<InitiativeTracker>("plugin");
     const table = getContext<ReturnType<typeof createTable>>("table");
 
     export let creature: SRDMonster;
+    $: xp = table.xpFor(creature, $levels);
     const add = (node: HTMLElement) => {
         new ExtraButtonComponent(node).setIcon("plus-with-circle").setTooltip("Add a copy to the encounter");
     };
@@ -113,11 +114,18 @@
         </div>
     </td>
     {#each $table as header}
-        <td><Nullable str={creature[header.field] ?? DEFAULT_UNDEFINED} /></td>
+        {#if header.field === "xp"}
+            <td class="creature-xp" title="XP per creature. Uses the selected RPG system's XP calculation; a dash means no XP value is available.">
+                <Nullable str={xp === null ? DEFAULT_UNDEFINED : xp.toLocaleString()} />
+            </td>
+        {:else}
+            <td><Nullable str={creature[header.field] ?? DEFAULT_UNDEFINED} /></td>
+        {/if}
     {/each}
 </tr>
 
 <style scoped>
+    .creature-xp { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .creature-name-container {
         /* display: flex;
         align-items: center;

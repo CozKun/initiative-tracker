@@ -30,6 +30,9 @@
                 "showParty": {
                     "type": "boolean"
                 },
+                "xpColumnAdded": {
+                    "type": "boolean"
+                },
                 "showXP": {
                     "type": "boolean"
                 },

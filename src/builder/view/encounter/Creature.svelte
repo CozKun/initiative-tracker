@@ -14,6 +14,7 @@
     export let count: number;
     export let creature: EncounterCreature;
     $: colours = copyColours(creature, count);
+    $: perCreature = rpgSystem.getCreatureDifficulty(creature, $levels);
     $: insignificant = $levels.length > 0 && "cr" in creature && creature.cr != null && convertFraction(creature.cr) < $average - 3;
     $: challenge = $levels.length > 0 && "cr" in creature && creature.cr != null && convertFraction(creature.cr) > $average + 3;
     const icon = (node: HTMLElement, name: string) => { setIcon(node, name); return { update: (next: string) => setIcon(node, next) }; };
@@ -50,7 +51,13 @@
         </div>
         <span class="stats" title="Difficulty value per creature, before any encounter adjustments.">
             {#each rpgSystem.getAdditionalCreatureDifficultyStats(creature, $levels) as stat}<span>{stat}</span>{/each}
-            <span>{rpgSystem.formatDifficultyValue(rpgSystem.getCreatureDifficulty(creature, $levels), true)} each</span>
+            <span>{rpgSystem.formatDifficultyValue(perCreature, true)} each</span>
+            <span aria-hidden="true">·</span>
+            <strong class="group-total" title={creature.friendly
+                ? "Total for this group before encounter adjustments. Allies are excluded from encounter difficulty."
+                : "Per-creature value multiplied by the number of copies, before encounter adjustments."}>
+                {rpgSystem.formatDifficultyValue(perCreature * count, true)} total
+            </strong>
         </span>
         {#if creature.hidden}<span class="flag">Hidden</span>{/if}
         {#if creature.friendly}<span class="flag">Ally</span>{/if}
@@ -77,7 +84,8 @@
     .creature-info { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.35rem; }
     .quantity-controls { display: flex; align-items: center; gap: 0.25rem; }
     input { text-align: center; width: 3rem; padding: 0.2rem; }
-    .stats { display: flex; gap: 0.5rem; }
+    .stats { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .group-total { color: var(--text-normal); font-weight: 500; }
     .flag { border: 1px solid var(--background-modifier-border); border-radius: 4px; padding: 0 0.3rem; }
     .creature-copies { margin: 0.55rem 0 0 0.5rem; padding-left: 0.65rem; border-left: 2px solid var(--background-modifier-border); }
     .creature-copy { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 0.7rem; align-items: center; padding: 0.3rem 0.35rem; font-size: var(--font-ui-small); }

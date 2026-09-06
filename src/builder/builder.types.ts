@@ -4,6 +4,7 @@ export interface BuilderState {
     sidebarIcon: boolean;
     showXP: boolean;
     showParty: boolean;
+    xpColumnAdded?: boolean;
     headers?: TableHeaderState[];
     filters?: {
         layout: FilterLayout;

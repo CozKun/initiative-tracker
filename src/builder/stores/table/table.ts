@@ -4,7 +4,8 @@ import {
     type TableHeaderState
 } from "src/builder/builder.types";
 import { type SRDMonster } from "src/types/creatures";
-import { convertFraction } from "../../../utils";
+import { convertFraction, getRpgSystem } from "../../../utils";
+import { players } from "../players";
 import type InitiativeTracker from "../../../main";
 import { Modal } from "obsidian";
 import copy from "fast-copy";
@@ -78,6 +79,11 @@ export const DEFAULT_HEADERS: TableHeaderState[] = [
         type: SortFunctions.CONVERT_FRACTION
     },
     {
+        text: "XP",
+        field: "xp",
+        type: SortFunctions.CONVERT_FRACTION
+    },
+    {
         text: "Type",
         field: "type",
         type: SortFunctions.LOCAL_COMPARE
@@ -111,6 +117,15 @@ export function createTable(plugin: InitiativeTracker, monsters: SRDMonster[]) {
     }
     if (!plugin.data.builder.headers) {
         plugin.data.builder.headers = copy(DEFAULT_HEADERS);
+    }
+    if (!plugin.data.builder.xpColumnAdded) {
+        const headers = plugin.data.builder.headers;
+        if (!headers.some((header) => header.field === "xp")) {
+            const position = headers.findIndex((header) => header.field === "cr");
+            headers.splice(position < 0 ? headers.length : position + 1, 0,
+                copy(DEFAULT_HEADERS.find((header) => header.field === "xp")));
+        }
+        plugin.data.builder.xpColumnAdded = true;
         plugin.saveSettings();
     }
 
@@ -119,6 +134,12 @@ export function createTable(plugin: InitiativeTracker, monsters: SRDMonster[]) {
     );
     const { subscribe, set, update } = store;
     const creatures = writable<SRDMonster[]>(copy(monsters));
+    const xpFor = (creature: SRDMonster, levels = get(players.levels)): number | null => {
+        const system = getRpgSystem(plugin);
+        // CR-based systems do not express their difficulty values in XP.
+        const value = system.valueUnit === "XP" ? system.getCreatureDifficulty(creature, levels) : creature.xp;
+        return typeof value === "number" && Number.isFinite(value) ? value : null;
+    };
 
     let sortDir = writable(true); //true == asc, false == des
     const allHeaders = derived(store, (headers) => {
@@ -136,8 +157,19 @@ export function createTable(plugin: InitiativeTracker, monsters: SRDMonster[]) {
             }
 
             creatures.update((creatures) => {
+                const ascending = get(sortDir);
+                const xpSort = field.field === "xp" && field.type === SortFunctions.CONVERT_FRACTION;
+                const levels = get(players.levels);
+                const experience = xpSort ? new Map(creatures.map((creature) => [creature, xpFor(creature, levels)])) : null;
                 creatures.sort(
-                    get(sortDir)
+                    xpSort
+                        ? (a, b) => {
+                            const first = experience.get(a), second = experience.get(b);
+                            if (first === null) return second === null ? 0 : 1;
+                            if (second === null) return -1;
+                            return (first - second) * (ascending ? 1 : -1);
+                        }
+                        : ascending
                         ? field.sortAsc.bind(field)
                         : field.sortDesc.bind(field)
                 );
@@ -157,6 +189,7 @@ export function createTable(plugin: InitiativeTracker, monsters: SRDMonster[]) {
         sort,
         sortDir,
         creatures,
+        xpFor,
         reset: () =>
             creatures.update(() => {
                 return copy(monsters);

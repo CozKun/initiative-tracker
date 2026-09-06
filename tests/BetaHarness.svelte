@@ -1,6 +1,6 @@
 <script lang="ts">
     import { setContext } from "svelte";
-    import { get } from "svelte/store";
+    import { get, readable } from "svelte/store";
     import { tracker } from "../src/tracker/stores/tracker";
     import { Creature } from "../src/utils/creature";
     import { DEFAULT_SETTINGS } from "../src/utils/constants";
@@ -18,6 +18,8 @@
     import { players as builderPlayers } from "../src/builder/stores/players";
     import { expandEncounter, groupEncounterCreatures, encounterBlockCreatures } from "../src/builder/encounter-creatures";
     import { EncounterParser } from "../src/encounter";
+    import { createTable } from "../src/builder/stores/table/table";
+    import BestiaryCreature from "../src/builder/view/creatures/Creature.svelte";
 
     const { quickHealth, updateSession, updating } = tracker;
     const saved = JSON.parse(localStorage.getItem("beta-fixture") ?? "null");
@@ -62,10 +64,12 @@
     const catalogueGoblin = { name: "Goblin", hp: 30, ac: 14, cr: "1/4", xp: 50 };
     if (builderMode) {
         plugin.data.rpgSystem = "dnd5e-55";
-        plugin.data.builder.showParty = true;
         plugin.data.builder.showXP = true;
         plugin.data.encounters = {};
-        plugin.data.parties = [];
+        plugin.data.parties = [{name: "Test party", players: ["Aria", "Borin"]}];
+        plugin.getPlayersForParty = (name: string) => name === "Test party" ? [
+            new Creature({name:"Aria",level:3,player:true}), new Creature({name:"Borin",level:5,player:true})
+        ] : [];
         tracker.setData(plugin.data);
         builderPlayers.empty(); encounter.empty();
         builderPlayers.add({ isPlayer: false, enabled: true, count: 4, level: 1 });
@@ -73,6 +77,13 @@
         Object.assign((window as any).fixture, { encounter, builderPlayers, catalogueGoblin,
             expandEncounter, groupEncounterCreatures, encounterBlockCreatures, parser: new EncounterParser(plugin) });
     }
+    const table = builderMode ? createTable(plugin, [catalogueGoblin,
+        { name: "Zero XP", hp: 30, ac: 14, cr: "5", xp: 0 },
+        { name: "Ogre", hp: 59, ac: 11, cr: "2" }]) : null;
+    const headers = table?.allHeaders ?? readable([]);
+    const bestiary = table?.creatures ?? readable([]);
+    setContext("table", table);
+    if (builderMode) Object.assign((window as any).fixture, { table, createTable });
 </script>
 
 <main class="obsidian-initiative-tracker">
@@ -82,6 +93,11 @@
             <PartyExperience />
             <BuilderEncounter />
             <button on:click={() => encounter.add(catalogueGoblin)}>Add Goblin from bestiary</button>
+            <div class="bestiary-test-scroll">
+                <table class="bestiary-test-table"><thead><tr>{#each $headers as header}
+                    <th><button on:click={() => table.sort(header)}>{header.text}</button></th>
+                {/each}</tr></thead><tbody>{#each $bestiary as creature}<BestiaryCreature {creature} />{/each}</tbody></table>
+            </div>
         </div>
     {:else}
     <h2>Initiative Tracker Beta</h2>
@@ -98,3 +114,5 @@
     <button class="outside">Outside panel</button>
     {/if}
 </main>
+
+<style>.bestiary-test-scroll { overflow-x: auto; margin-top: 1rem; }</style>
