@@ -1,165 +1,89 @@
 <script lang="ts">
-    import type { SRDMonster } from "src/types/creatures";
-    import { ExtraButtonComponent, setIcon } from "obsidian";
+    import { setIcon } from "obsidian";
     import { convertFraction, FRIENDLY, getRpgSystem, HIDDEN } from "src/utils";
     import { encounter } from "../../stores/encounter";
-    import Nullable from "../Nullable.svelte";
+    import { copyColours, type EncounterCreature } from "../../encounter-creatures";
+    import MiniColourPicker from "src/ui/MiniColourPicker.svelte";
     import { getContext } from "svelte";
     import { Creature as CreatureCreator } from "src/utils/creature";
 
     const { players } = encounter;
-    const { average } = players;
-
+    const { average, levels } = players;
     const plugin = getContext("plugin");
     const rpgSystem = getRpgSystem(plugin);
-    const remove = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("minus-circle");
-    };
-    const add = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("plus-with-circle");
-    };
-    const del = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("trash-2");
-    };
-    const hide = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon(HIDDEN);
-    };
-    const hideIcon = (node: HTMLElement) => {
-        setIcon(node, HIDDEN);
-    };
-    const friend = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon(FRIENDLY);
-    };
-    const friendIcon = (node: HTMLElement) => {
-        setIcon(node, FRIENDLY);
-    };
-
     export let count: number;
-    export let creature: SRDMonster;
-    $: insignificant =
-        "cr" in creature &&
-        creature.cr &&
-        convertFraction(creature.cr) < $average - 3;
-    $: challenge =
-        "cr" in creature &&
-        creature.cr &&
-        convertFraction(creature.cr) > $average + 3;
-
-    $: playerLevels = $players.filter((p) => p.enabled).map((p) => p.level);
-
-    const baby = (node: HTMLElement) => setIcon(node, "baby");
-
-    const skull = (node: HTMLElement) => setIcon(node, "skull");
-
-    const open = (evt: MouseEvent) => {
-        plugin.openCombatant(CreatureCreator.from(creature), evt.ctrlKey || evt.metaKey);
-    };
+    export let creature: EncounterCreature;
+    $: colours = copyColours(creature, count);
+    $: insignificant = $levels.length > 0 && "cr" in creature && creature.cr != null && convertFraction(creature.cr) < $average - 3;
+    $: challenge = $levels.length > 0 && "cr" in creature && creature.cr != null && convertFraction(creature.cr) > $average + 3;
+    const icon = (node: HTMLElement, name: string) => { setIcon(node, name); return { update: (next: string) => setIcon(node, next) }; };
+    const open = (event: MouseEvent) => plugin.openCombatant(CreatureCreator.from(creature), event.ctrlKey || event.metaKey);
+    const toggle = (field: "friendly" | "hidden") => { creature[field] = !creature[field]; encounter.update(creature); };
 </script>
 
-<div class="encounter-creature-container">
-    <div class="encounter-creature-controls">
-        <div use:remove on:click={() => encounter.remove(creature)} />
-        <input
-            type="number"
-            min="1"
-            bind:value={count}
-            on:change={(evt) =>
-                encounter.set(creature, Number(evt.currentTarget.value))}
-        />
-        <div use:add on:click={() => encounter.add(creature)} />
-    </div>
-    <div class="encounter-creature">
-        {#if creature.hidden}
-            <div
-                class="contains-icon"
-                use:hideIcon
-                aria-label={`This creature is hidden.`}
-            />
-        {/if}
-        {#if creature.friendly}
-            <div
-                class="contains-icon"
-                use:friendIcon
-                aria-label={`This creature is an ally.`}
-            />
-        {/if}
-        <strong class="encounter-creature-name" on:click={open}>
-            {creature.name}
-        </strong>
-        {#if insignificant}
-            <div
-                class="contains-icon"
-                use:baby
-                aria-label={`${
-                    count > 1 ? "These creatures are" : "This creature is"
-                } significantly under the average party level and might not contribute much to the fight.`}
-            />
-        {/if}
-        {#if challenge}
-            <div
-                class="contains-icon"
-                use:skull
-                aria-label={`${
-                    count > 1 ? "These creatures are" : "This creature is"
-                } significantly over the average party level and might prove a challenge.`}
-            />
-        {/if}
-    </div>
-    {#each rpgSystem.getAdditionalCreatureDifficultyStats(creature, playerLevels) as stat}
-        <div class="encounter-creature-context">
-            <span>{stat}</span>
+<div class="encounter-creature-card">
+    <div class="creature-heading">
+        <button type="button" class="creature-name" title="Open creature details. Ctrl/Cmd-click opens a new pane." on:click={open}>{creature.name}</button>
+        <span class="quantity">×{count}</span>
+        {#if insignificant}<span use:icon={"baby"} title="This creature's challenge rating is well below the average enabled party level." />{/if}
+        {#if challenge}<span use:icon={"skull"} title="This creature's challenge rating is well above the average enabled party level." />{/if}
+        <div class="row-actions">
+            <button type="button" class="clickable-icon" class:selected={creature.hidden} aria-pressed={!!creature.hidden}
+                aria-label={creature.hidden ? `Reveal ${creature.name} in player view` : `Hide ${creature.name} from player view`}
+                title="Toggle visibility in the player view. Hidden enemies still count towards difficulty." use:icon={HIDDEN} on:click={() => toggle("hidden")} />
+            <button type="button" class="clickable-icon" class:selected={creature.friendly} aria-pressed={!!creature.friendly}
+                aria-label={creature.friendly ? `Make ${creature.name} an enemy` : `Make ${creature.name} an ally`}
+                title="Toggle ally status for this group. Allies are excluded from encounter difficulty." use:icon={FRIENDLY} on:click={() => toggle("friendly")} />
+            <button type="button" class="clickable-icon" aria-label={`Remove all ${creature.name}`} title="Remove this entire creature group from the encounter."
+                use:icon={"trash-2"} on:click={() => encounter.delete(creature)} />
         </div>
-    {/each}
-    <div class="encounter-creature-context">
-        <span>
-            <Nullable
-                str={rpgSystem.formatDifficultyValue(
-                    rpgSystem.getCreatureDifficulty(creature, playerLevels),
-                    true
-                )}
-            />
-        </span>
     </div>
-    <div class="encounter-creature-controls">
-        <div use:hide on:click={() => (creature.hidden = !creature.hidden)} />
-        <div
-            use:friend
-            on:click={() => {
-                creature.friendly = !creature.friendly;
-                encounter.update(creature);
-            }}
-        />
-        <div use:del on:click={() => encounter.delete(creature)} />
+    <div class="creature-info">
+        <div class="quantity-controls" aria-label={`${creature.name} quantity`}>
+            <button type="button" class="clickable-icon" aria-label={`Remove last ${creature.name}`} title="Remove the last copy, keeping the earlier copies and their colours."
+                use:icon={"minus-circle"} on:click={() => encounter.remove(creature)} />
+            <input type="number" min="1" step="1" value={count} aria-label={`Number of ${creature.name}`}
+                title="Number of copies. Reducing this removes copies from the end."
+                on:change={(event) => { encounter.set(creature, Number(event.currentTarget.value)); event.currentTarget.value = String(count); }} />
+            <button type="button" class="clickable-icon" aria-label={`Add another ${creature.name}`} title="Add another copy with its own Mini Colour Indicator."
+                use:icon={"plus-circle"} on:click={() => encounter.add(creature)} />
+        </div>
+        <span class="stats" title="Difficulty value per creature, before any encounter adjustments.">
+            {#each rpgSystem.getAdditionalCreatureDifficultyStats(creature, $levels) as stat}<span>{stat}</span>{/each}
+            <span>{rpgSystem.formatDifficultyValue(rpgSystem.getCreatureDifficulty(creature, $levels), true)} each</span>
+        </span>
+        {#if creature.hidden}<span class="flag">Hidden</span>{/if}
+        {#if creature.friendly}<span class="flag">Ally</span>{/if}
+    </div>
+    <div class="creature-copies" role="group" aria-label={`${creature.name} copies`}>
+        {#each colours as colour, index}
+            <div class="creature-copy">
+                <span>{creature.name} {index + 1}</span>
+                <MiniColourPicker colour={colour ?? undefined} label={`Mini Colour Indicator: ${creature.name} ${index + 1}`}
+                    onChange={(value) => encounter.setColour(creature, index, value)} />
+                <button type="button" class="clickable-icon remove-copy" aria-label={`Remove ${creature.name} ${index + 1}`}
+                    title="Remove only this copy and its colour indicator." use:icon={"x"} on:click={() => encounter.remove(creature, index)} />
+            </div>
+        {/each}
     </div>
 </div>
 
-<style scoped>
-    .encounter-creature-container {
-        display: grid;
-        align-items: center;
-        justify-content: center;
-        grid-template-columns: min-content 1fr 10% 10% auto auto auto;
-        gap: 0.5rem;
-    }
-    .encounter-creature {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .encounter-creature-context {
-        text-align: right;
-    }
-    .encounter-creature-controls {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    input {
-        text-align: center;
-        width: 40px;
-    }
-    .contains-icon {
-        display: flex;
-        align-items: center;
-    }
+<style>
+    .encounter-creature-card { border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); padding: 0.65rem; min-width: 0; }
+    .creature-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+    .creature-name { font-weight: 600; padding: 0; background: none; border: 0; box-shadow: none; text-align: left; white-space: normal; height: auto; }
+    .quantity, .stats, .flag { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+    .row-actions { display: flex; margin-left: auto; gap: 0.25rem; }
+    .creature-info { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.35rem; }
+    .quantity-controls { display: flex; align-items: center; gap: 0.25rem; }
+    input { text-align: center; width: 3rem; padding: 0.2rem; }
+    .stats { display: flex; gap: 0.5rem; }
+    .flag { border: 1px solid var(--background-modifier-border); border-radius: 4px; padding: 0 0.3rem; }
+    .creature-copies { margin: 0.55rem 0 0 0.5rem; padding-left: 0.65rem; border-left: 2px solid var(--background-modifier-border); }
+    .creature-copy { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 0.7rem; align-items: center; padding: 0.3rem 0.35rem; font-size: var(--font-ui-small); }
+    .creature-copy > span { overflow-wrap: anywhere; }
+    .creature-copy + .creature-copy { border-top: 1px solid var(--background-modifier-border); }
+    .clickable-icon { margin: 0; padding: 0.25rem; background: transparent; box-shadow: none; border: 0; height: auto; }
+    .selected { color: var(--text-on-accent); background: var(--interactive-accent); }
+    .remove-copy { color: var(--text-muted); }
 </style>

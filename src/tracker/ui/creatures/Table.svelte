@@ -107,8 +107,8 @@
                         <div
                             class="table-header-button"
                             use:baseColorIcon
-                            title="Mini base colour"
-                            aria-label="Mini base colour"
+                            title="Mini Colour Indicator"
+                            aria-label="Mini Colour Indicator"
                         />
                     </th>
                 {/if}

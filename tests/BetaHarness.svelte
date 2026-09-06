@@ -12,17 +12,30 @@
     import { dnd55DifficultyScale } from "../src/utils/difficulty-scale";
     import { getRpgSystem } from "../src/utils/rpg-system";
     import { showCreatureMenu } from "../src/tracker/ui/creatures/creature-menu";
+    import BuilderEncounter from "../src/builder/view/encounter/Encounter.svelte";
+    import PartyExperience from "../src/builder/view/party/PartyExperience.svelte";
+    import { encounter } from "../src/builder/stores/encounter";
+    import { players as builderPlayers } from "../src/builder/stores/players";
+    import { expandEncounter, groupEncounterCreatures, encounterBlockCreatures } from "../src/builder/encounter-creatures";
+    import { EncounterParser } from "../src/encounter";
 
     const { quickHealth, updateSession, updating } = tracker;
     const saved = JSON.parse(localStorage.getItem("beta-fixture") ?? "null");
     const plugin: any = {
         data: { ...structuredClone(DEFAULT_SETTINGS), ...(saved ?? {}), autoStatus: false },
         async saveSettings() { localStorage.setItem("beta-fixture", JSON.stringify(this.data)); tracker.setData(this.data); },
-        getCreatureFromBestiary() { return null; }
+        getCreatureFromBestiary() { return null; },
+        getPlayersForParty() { return []; },
+        getPlayerByName() { return null; },
+        addEncounter(name: string, state: any) { this.data.encounters[name] = state; },
+        view: { leaf: {} },
+        canUseDiceRoller: false,
+        getInitiativeValue() { return 10; },
+        openCombatant() {}
     };
     plugin.app = { workspace: { trigger: (_name: string, state: unknown) => {
         plugin.data.state = state; void plugin.saveSettings();
-    } } };
+    }, revealLeaf() {} } };
     (window as any).app = plugin.app;
     const log: unknown[] = [];
     tracker.setData(plugin.data);
@@ -45,9 +58,32 @@
     };
     (window as any).fixture = { tracker, first, second, plugin, log, get, recentColours,
         dnd55DifficultyScale, getRpgSystem, setDifficultyScenario };
+    const builderMode = new URLSearchParams(location.search).has("builder");
+    const catalogueGoblin = { name: "Goblin", hp: 30, ac: 14, cr: "1/4", xp: 50 };
+    if (builderMode) {
+        plugin.data.rpgSystem = "dnd5e-55";
+        plugin.data.builder.showParty = true;
+        plugin.data.builder.showXP = true;
+        plugin.data.encounters = {};
+        plugin.data.parties = [];
+        tracker.setData(plugin.data);
+        builderPlayers.empty(); encounter.empty();
+        builderPlayers.add({ isPlayer: false, enabled: true, count: 4, level: 1 });
+        encounter.add(catalogueGoblin);
+        Object.assign((window as any).fixture, { encounter, builderPlayers, catalogueGoblin,
+            expandEncounter, groupEncounterCreatures, encounterBlockCreatures, parser: new EncounterParser(plugin) });
+    }
 </script>
 
 <main class="obsidian-initiative-tracker">
+    {#if builderMode}
+        <div class="builder-fixture initiative-tracker encounter-builder markdown-rendered">
+            <h2>Encounter Builder Beta</h2>
+            <PartyExperience />
+            <BuilderEncounter />
+            <button on:click={() => encounter.add(catalogueGoblin)}>Add Goblin from bestiary</button>
+        </div>
+    {:else}
     <h2>Initiative Tracker Beta</h2>
     {#if showDifficulty}<Difficulty />{/if}
     <table class="initiative-tracker-table"><thead><tr><th>Colour</th><th>Init</th><th>Name</th><th>HP</th><th>AC</th></tr></thead>
@@ -60,4 +96,5 @@
     {#key $updateSession}<Updating />{/key}
     {#if $quickHealth}{#key $quickHealth}<QuickHealth session={$quickHealth} />{/key}{/if}
     <button class="outside">Outside panel</button>
+    {/if}
 </main>

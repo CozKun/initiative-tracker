@@ -14,7 +14,7 @@ export interface CreatureState extends HomebrewCreature {
 }
 export interface SRDMonster {
     name: string;
-    ac: number;
+    ac: number | string;
     hp: number;
     hit_dice?: string;
     cr: string | number;

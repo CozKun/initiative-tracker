@@ -1,155 +1,71 @@
 <script lang="ts">
     import { encounter } from "../../stores/encounter";
     import { players } from "../../stores/players";
-    import { RpgSystemSetting, getRpgSystem } from "src/utils";
+    import { getRpgSystem } from "src/utils";
     import { getContext } from "svelte";
-    import Collapsible from "./Collapsible.svelte";
+    import DifficultyGauge from "src/ui/DifficultyGauge.svelte";
 
     const plugin = getContext("plugin");
-
-    const open = plugin.data.builder.showXP;
     const rpgSystem = getRpgSystem(plugin);
-
-    $: enc = new Map(
-        [...$encounter.entries()].map(([m, c]) =>
-            m.friendly ? [m, 0] : [m, c]
-        )
-    );
-    let filtered = 0;
-    $: {
-        filtered = 0;
-        for (const [monster, count] of enc) {
-            if (count === 0) {
-                filtered += $encounter.get(monster) ?? 0;
-            }
+    const { levels } = players;
+    let open = plugin.data.builder.showXP;
+    $: enc = new Map([...$encounter].filter(([creature]) => !creature.friendly));
+    $: filtered = [...$encounter].reduce((sum, [creature, count]) => sum + (creature.friendly ? count : 0), 0);
+    $: difficulty = rpgSystem.getEncounterDifficulty(enc, $levels);
+    $: thresholds = rpgSystem.getDifficultyThresholds($levels);
+    $: formattedXp = rpgSystem.formatDifficultyValue(difficulty.value, true);
+    const rememberOpen = (event: Event) => {
+        const next = (event.currentTarget as HTMLDetailsElement).open;
+        if (plugin.data.builder.showXP !== next) {
+            plugin.data.builder.showXP = next;
+            void plugin.saveSettings();
         }
-    }
-
-    $: playerLevels = $players.filter((p) => p.enabled).map((p) => p.level);
-    $: difficulty = rpgSystem.getEncounterDifficulty(enc, playerLevels);
+    };
 </script>
 
-<div class="xp-container">
-    <Collapsible
-        {open}
-        on:toggle={() =>
-            (plugin.data.builder.showXP = !plugin.data.builder.showXP)}
-    >
-        <div class="title-container" slot="title">
-            <h5 class="title">Experience</h5>
-            <span>
-                {#if plugin.data.rpgSystem != RpgSystemSetting.Dnd5e}
-                    ({rpgSystem.displayName})
-                {/if}
-            </span>
-            {#if filtered > 0}
-                <span class="filtered"
-                    >Filtering {filtered} allied creature{filtered > 1
-                        ? "s"
-                        : ""}</span
-                >
-            {/if}
+<section class="builder-difficulty" aria-label="Encounter difficulty summary">
+    <div class="section-heading"><h5>Encounter difficulty</h5><span>{rpgSystem.displayName}</span></div>
+    {#if plugin.data.rpgSystem !== "dnd5e-55"}
+        <div class="difficulty-summary" title={difficulty.summary}>
+            <strong>{$levels.length ? difficulty.displayName : "Add party levels"}</strong><span>{formattedXp}</span>
         </div>
-        <div class="content" slot="content">
-            <div class="xp">
-                <div class="encounter-difficulty">
-                    <div class="difficulty container">
-                        <strong class="header">Difficulty</strong>
-                        <span>{difficulty.displayName}</span>
-                    </div>
-                    {#each difficulty.intermediateValues as intermediate}
-                        <div class="adjusted container">
-                            <strong class="header">{intermediate.label}</strong>
-                            <span>{intermediate.value.toLocaleString()}</span>
-                        </div>
-                    {/each}
-                    <div class="total container">
-                        <strong class="header">{difficulty.title}</strong>
-                        <span
-                            >{rpgSystem.formatDifficultyValue(
-                                difficulty.value
-                            )}</span
-                        >
-                    </div>
+    {/if}
+    <DifficultyGauge {difficulty} {thresholds} system={plugin.data.rpgSystem}
+        labels={thresholds.map((threshold) => threshold.displayName)} {formattedXp} />
+    <p class="party-context" title="Only enabled players with a level count towards the party's difficulty thresholds. Allied creatures are excluded; hidden enemies still count.">
+        {$levels.length} enabled player{$levels.length === 1 ? "" : "s"}{#if filtered} · {filtered} allied creature{filtered === 1 ? "" : "s"} excluded{/if}
+    </p>
+    <details bind:open on:toggle={rememberOpen}>
+        <summary title="Show the party's difficulty thresholds and calculation details.">Party budgets</summary>
+        <div class="thresholds">
+            {#each thresholds as budget}
+                <div title={`The ${budget.displayName} threshold for all enabled players combined.`}>
+                    <span>{budget.displayName}</span><strong>{rpgSystem.formatDifficultyValue(budget.minValue, true)}</strong>
                 </div>
-                <div class="thresholds">
-                    {#each rpgSystem.getDifficultyThresholds(playerLevels) as budget}
-                        <div
-                            class="experience-threshold {budget.displayName.toLowerCase()} container"
-                        >
-                            <strong class="experience-name header">
-                                {budget.displayName}
-                            </strong>
-                            <span class="experience-amount">
-                                {rpgSystem.formatDifficultyValue(
-                                    budget.minValue,
-                                    true
-                                )}
-                            </span>
-                        </div>
-                    {/each}
-                </div>
-                <br />
-            </div>
-            <div class="budget">
-                {#each rpgSystem.getAdditionalDifficultyBudgets(playerLevels) as budget}
-                    <h5 class="experience-name">{budget.displayName}</h5>
-                    <span class="experience-amount">
-                        {rpgSystem.formatDifficultyValue(budget.minValue, true)}
-                    </span>
-                {/each}
-            </div>
+            {/each}
         </div>
-    </Collapsible>
-</div>
+        {#each difficulty.intermediateValues as intermediate}
+            <p class="calculation">{intermediate.label}: {intermediate.value.toLocaleString()}</p>
+        {/each}
+        {#each rpgSystem.getAdditionalDifficultyBudgets($levels) as budget}
+            <p class="calculation">{budget.displayName}: {rpgSystem.formatDifficultyValue(budget.minValue, true)}</p>
+        {/each}
+        {#if plugin.data.rpgSystem === "dnd5e-55"}
+            <p class="explanation">Uses enemy XP without a creature-count multiplier. The bands show difficulty tiers; High has no upper XP limit.</p>
+        {/if}
+    </details>
+</section>
 
-<style scoped>
-    .title-container {
-        display: flex;
-        flex-flow: column nowrap;
-        gap: 0.1rem;
-    }
-    .title {
-        margin-bottom: 0;
-    }
-    .content {
-        display: flex;
-        flex-flow: column nowrap;
-        gap: 0.25rem;
-    }
-    .filtered {
-        font-size: smaller;
-        color: var(--text-muted);
-    }
-    .xp-container {
-        margin-left: auto;
-    }
-    .xp {
-        display: flex;
-        gap: 1rem;
-    }
-    .thresholds {
-        display: flex;
-        flex-flow: column;
-        gap: 0.5rem;
-    }
-    .experience-amount {
-        margin-left: auto;
-    }
-    .encounter-difficulty {
-        display: flex;
-
-        flex-flow: column nowrap;
-        gap: 0.5rem;
-        /* justify-content: space-between; */
-        margin-bottom: 1rem;
-    }
-    .container {
-        display: flex;
-        flex-flow: column nowrap;
-    }
-    .header {
-        text-transform: uppercase;
-        font-weight: bolder;
-    }
+<style>
+    .builder-difficulty { min-width: 0; }
+    .section-heading, .difficulty-summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.4rem; }
+    h5 { margin: 0 0 0.75rem; }
+    .section-heading span, .party-context, .explanation { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+    .party-context { margin: 0.3rem 0 0.8rem; }
+    .difficulty-summary { margin-bottom: 0.5rem; }
+    summary { cursor: pointer; font-size: var(--font-ui-small); width: fit-content; }
+    .thresholds { display: grid; grid-template-columns: repeat(auto-fit, minmax(65px, 1fr)); gap: 0.5rem; margin-top: 0.65rem; }
+    .thresholds > div { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.5rem; border-radius: var(--radius-s); background: var(--background-secondary); }
+    .thresholds span { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+    .calculation, .explanation { margin: 0.6rem 0 0; }
 </style>

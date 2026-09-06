@@ -37,7 +37,7 @@ export function showCreatureMenu(
     if (creature.baseColor) {
         menu.addItem((item) => {
             item.setIcon("eraser")
-                .setTitle("Clear Mini Base Colour")
+                .setTitle("Clear Mini Colour Indicator")
                 .onClick(() => {
                     tracker.updateCreatures({
                         creature,

@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.23-beta.1 — 2026-09-06 (beta only)
+
+* Encounter groups now show compact nested copies, each with its own Mini Colour Indicator and remove button. Quantity controls add or remove copies from the end; removing a specific copy keeps the other colours attached correctly.
+* Added the shared colour picker to the builder, including recent selections and No colour. Individual colours survive saving/loading, workspace restoration, copying encounter blocks, and starting the tracker.
+* Renamed the current UI's mini base colour controls to Mini Colour Indicator, covering bases, rings, tokens, and other identifiers.
+* Added the tracker's D&D 5.5e difficulty bands to the builder, with visible XP, party thresholds on hover, and expandable budget details. The gauge stays visible when budget details are collapsed.
+* Added explanatory tooltips for encounter controls, quantity changes, player levels, visibility, allies, and colour indicators. Nested groups and difficulty panels adapt to narrower panes.
+* Fixed unnamed player quantities being ignored in difficulty budgets and average party level. Saving and starting an encounter now include the configured number of enabled players.
+* Encounter edits use draft creatures instead of altering bestiary entries. Hidden enemies still count towards difficulty; allied creatures are excluded.
+* Invalid creature quantities preserve the existing copies. Newly added copies start without a colour, including after loading an encounter.
+
+Validation: production build and 28 browser interaction checks, including saved/copy/start colour round-trips and narrow-pane checks. Pending live Obsidian feedback; stable remains 13.0.22.
+
 ### 13.0.22 — 2026-09-06
 
 Promoted from `13.0.21-beta.3` after live Obsidian approval. This is a private Community Edition update under the stable `coz-initiative-tracker` identity.

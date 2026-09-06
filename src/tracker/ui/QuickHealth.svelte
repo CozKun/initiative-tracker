@@ -22,7 +22,7 @@
     <div class="heading">
         {#if session.creature.baseColor}
             <span class="mini-colour" style:background-color={session.creature.baseColor}
-                title={`Mini base colour: ${session.creature.baseColor}`} />
+                title={`Mini Colour Indicator: ${session.creature.baseColor}`} />
         {/if}
         <strong>{session.creature.getName()}</strong>
         <button class="close" type="button" aria-label="Cancel health adjustment" on:click={close}>×</button>

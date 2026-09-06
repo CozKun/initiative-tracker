@@ -13,6 +13,6 @@
 <style scoped>
     .players-xp {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1.5rem; margin-bottom: 1.25rem;
     }
 </style>

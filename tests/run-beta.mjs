@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
+import { runBuilderChecks } from "./builder-checks.mjs";
 
 const root = process.cwd();
 const out = path.join(root, "dist/beta-qa");
@@ -140,7 +141,7 @@ try {
     assert.equal((await snapshot()).first,12);
     check("invalid multipliers block application; Escape resets; fractional multipliers work");
 
-    const swatches = page.getByRole("button", {name:"Set mini base colour", exact:true});
+    const swatches = page.getByRole("button", {name:"Mini Colour Indicator", exact:true});
     await swatches.nth(0).click(); await page.getByLabel("Hex colour",{exact:true}).fill("#123ABC");
     await page.getByRole("button",{name:"Apply colour",exact:true}).click();
     assert.equal((await snapshot()).firstColour,"#123ABC");
@@ -161,7 +162,7 @@ try {
 
     await page.setViewportSize({width:360,height:330});
     await swatches.nth(0).click();
-    const bounds = await page.getByRole("dialog",{name:"Mini base colour picker"}).boundingBox();
+    const bounds = await page.getByRole("dialog",{name:"Mini Colour Indicator picker"}).boundingBox();
     assert.ok(bounds.x>=0 && bounds.y>=0 && bounds.x+bounds.width<=360 && bounds.y+bounds.height<=330);
     await page.screenshot({path:path.join(out,"colour-picker.png")});
     await page.getByLabel("Hex colour",{exact:true}).press("Escape");
@@ -217,6 +218,7 @@ try {
     assert.equal(await page.locator('meter.difficulty-bar').count(),1);
     assert.equal(await page.locator('.difficulty-bands').count(),0);
     check("other RPG systems keep their existing meter");
+    await runBuilderChecks(page, `http://127.0.0.1:${server.address().port}`, out, check);
     assert.deepEqual(errors,[]); check("no browser runtime errors");
     console.log(`${checks} beta interaction checks passed. Screenshots: ${out}`);
 } catch (error) {

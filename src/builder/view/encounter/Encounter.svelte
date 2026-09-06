@@ -12,10 +12,12 @@
     import { Creature as CreatureCreator } from "../../../utils/creature";
 
     import { encounter } from "../../stores/encounter";
+    import { expandEncounter, encounterBlockCreatures, groupEncounterCreatures } from "../../encounter-creatures";
+    import { expandPlayers } from "../../stores/players";
     import { START_ENCOUNTER } from "src/utils";
     import { getContext } from "svelte";
     import { tracker } from "src/tracker/stores/tracker";
-    import type { CreatureState, SRDMonster } from "src/types/creatures";
+
     import { writable } from "svelte/store";
 
     const { players } = encounter;
@@ -36,6 +38,7 @@
     };
 
     let rollHP = plugin.data.rollHP;
+    const currentPlayers = () => expandPlayers($players, (name) => plugin.getPlayerByName(name));
 
     $: items = [...$encounter.entries()];
 
@@ -49,30 +52,7 @@
                 }
 
                 const view = plugin.view;
-                const creatures: CreatureCreator[] = [];
-                const transformedCreatures: CreatureState[] = [];
-                for (const [srd, count] of items) {
-                    const creature = CreatureCreator.from(srd);
-                    const amount = Math.max(
-                        isNaN(Number(count)) ? 1 : Number(count),
-                        1
-                    );
-                    creatures.push(
-                        ...[...Array(amount).keys()].map((v) =>
-                            CreatureCreator.new(creature)
-                        )
-                    );
-                }
-                for (const creature of [
-                    ...$players.map(
-                        (p) =>
-                            plugin.getPlayerByName(p.name) ??
-                            CreatureCreator.from(p)
-                    ),
-                    ...creatures
-                ]) {
-                    transformedCreatures.push(creature.toJSON());
-                }
+                const transformedCreatures = [...currentPlayers(), ...expandEncounter(items)].map((creature) => creature.toJSON());
                 tracker.new(plugin, {
                     creatures: transformedCreatures,
                     name: $name,
@@ -94,16 +74,17 @@
                 startIcon.setTooltip("");
             } else {
                 startIcon.setDisabled(false);
-                startIcon.setTooltip("Start Encounter");
+                startIcon.setTooltip("Start this encounter in the initiative tracker");
             }
         }
     }
     const editIcon = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("pencil");
+        new ExtraButtonComponent(node).setIcon("pencil").setTooltip("Rename this encounter");
     };
+    const nameSaveIcon = (node: HTMLElement) => { new ExtraButtonComponent(node).setIcon("check").setTooltip("Apply encounter name"); };
     let saveButton: ExtraButtonComponent;
     const saveIcon = (node: HTMLElement) => {
-        saveButton = new ExtraButtonComponent(node).setIcon("save");
+        saveButton = new ExtraButtonComponent(node).setIcon("save").setTooltip("Save this encounter and its Mini Colour Indicators");
     };
     $: saveButton?.setDisabled($encounter.size == 0);
     const save = () => {
@@ -119,16 +100,7 @@
 
         const saveEncounter = () => {
             try {
-                const creatures = [
-                    ...[...$players].map((p) => CreatureCreator.from(p)),
-                    ...[...$encounter.entries()]
-                        .map((c) =>
-                            [...Array(c[1]).keys()].map(() =>
-                                CreatureCreator.from(c[0])
-                            )
-                        )
-                        .flat()
-                ];
+                const creatures = [...currentPlayers(), ...expandEncounter($encounter)];
                 plugin.addEncounter(encName, {
                     creatures: [...creatures.map((c) => c.toJSON())],
                     state: false,
@@ -140,6 +112,7 @@
                     timestamp: Date.now()
                 });
                 plugin.saveSettings();
+                loadButton?.setDisabled(false);
                 new Notice(`Encounter "${encName}" saved.`);
                 modal.close();
             } catch (e) {
@@ -176,7 +149,7 @@
     };
 
     const cancelIcon = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("cross-in-box");
+        new ExtraButtonComponent(node).setIcon("cross-in-box").setTooltip("Cancel renaming");
     };
     let exportIcon: ExtraButtonComponent;
     const exp = (node: HTMLElement) => {
@@ -189,7 +162,7 @@
                 exportIcon.setTooltip("");
             } else {
                 exportIcon.setDisabled(false);
-                exportIcon.setTooltip("Copy Encounter Block");
+                exportIcon.setTooltip("Copy an encounter block, including Mini Colour Indicators, to paste into a note");
             }
         }
     }
@@ -198,7 +171,7 @@
     const loadIcon = (node: HTMLElement) => {
         loadButton = new ExtraButtonComponent(node)
             .setIcon("upload")
-            .setTooltip("Load Encounter");
+            .setTooltip("Load a saved encounter, replacing the current builder contents");
     };
     $: loadButton?.setDisabled(Object.keys(plugin.data.encounters).length == 0);
     const load = (evt: MouseEvent) => {
@@ -209,18 +182,11 @@
                     $name = enc.name;
                     encounter.empty();
                     players.empty();
-                    for (const creature of enc.creatures) {
-                        if (creature.player) {
-                            players.addFromState(creature);
-                        } else {
-                            encounter.add(
-                                CreatureCreator.fromJSON(
-                                    creature,
-                                    plugin
-                                ) as any as SRDMonster
-                            );
-                        }
+                    for (const creature of enc.creatures.filter((creature) => creature.player)) {
+                        players.addFromState({ ...creature });
                     }
+                    encounter.setMultiple(groupEncounterCreatures(enc.creatures.filter((creature) => !creature.player)
+                        .map((creature) => CreatureCreator.fromJSON(creature, plugin))));
                 });
             });
         }
@@ -229,28 +195,22 @@
     const clear = (node: HTMLElement) => {
         new ExtraButtonComponent(node)
             .setIcon("eraser")
-            .setTooltip("Clear Encounter");
+            .setTooltip("Clear the encounter creatures; keep the selected party");
     };
     const copy = async () => {
         const enc: {
             name?: string;
             players?: string[];
-            creatures?: { [key: number]: string }[];
+            creatures?: ReturnType<typeof encounterBlockCreatures>;
         } = {};
         if ($name?.length) {
             enc.name = $name;
         }
         if ($players?.length) {
-            enc.players = $players.filter((p) => p.enabled).map((p) => p.name);
+            enc.players = $players.filter((p) => p.enabled && p.isPlayer).map((p) => p.name);
         }
         if ($encounter?.size) {
-            enc.creatures = [...$encounter.entries()].map(([c, v]) => {
-                return {
-                    [Number(v)]: `${c.name}${c.friendly ? ", friendly" : ""}${
-                        c.hidden ? ", hidden" : ""
-                    }`
-                };
-            });
+            enc.creatures = encounterBlockCreatures($encounter);
         }
         try {
             await navigator.clipboard.writeText(
@@ -270,7 +230,7 @@
     <div class="encounter-name">
         {#if $updatingName}
             <input type="text" bind:value={$tempName} placeholder={$name} />
-            <div use:saveIcon on:click={setName} />
+            <div use:nameSaveIcon on:click={setName} />
             <div use:cancelIcon on:click={cancelName} />
         {:else}
             <h5 class="built-encounter">{$name}</h5>
@@ -297,7 +257,7 @@
     <span>Add some creatures to get started!</span>
 {:else}
     <div class="encounter-creatures">
-        {#each items as [creature, count]}
+        {#each items as [creature, count] (creature)}
             <Creature {creature} {count} />
         {/each}
     </div>

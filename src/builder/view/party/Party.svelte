@@ -102,12 +102,12 @@
                     <div class="player" class:disabled={!player.enabled}>
                         <span class="player-name">{player.name}</span>
                         <div class="player-right">
-                            <span>{player.level}</span>
+                            <span title="Character level used for encounter difficulty.">Level {player.level}</span>
                             <div
                                 class="clickable-icon setting-editor-extra-setting-button"
                                 aria-label={player.enabled
-                                    ? "Disable"
-                                    : "Enable"}
+                                    ? "Exclude from encounter difficulty"
+                                    : "Include in encounter difficulty"}
                                 on:click={() => players.toggleEnabled(player)}
                             >
                                 {#if player.enabled}
@@ -124,6 +124,9 @@
                         <input
                             type="number"
                             value={player.count}
+                            aria-label={`Number of players in group ${index + 1}`}
+                            title="How many players of this level to include in the difficulty calculation."
+                            step="1"
                             on:input={(evt) =>
                                 players.set(
                                     player,
@@ -131,13 +134,16 @@
                                 )}
                             min="1"
                         />
-                        <span>Player(s)</span>
+                        <span>Players</span>
                         <div use:crossIcon />
 
                         <span>Level</span>
                         <input
                             type="number"
                             value={player.level}
+                            aria-label={`Level of player group ${index + 1}`}
+                            title="Level of each player in this group."
+                            step="1"
                             on:input={(evt) =>
                                 players.setLevel(
                                     player,
@@ -149,8 +155,8 @@
                             <div
                                 class="clickable-icon setting-editor-extra-setting-button"
                                 aria-label={player.enabled
-                                    ? "Disable"
-                                    : "Enable"}
+                                    ? "Exclude from encounter difficulty"
+                                    : "Include in encounter difficulty"}
                                 on:click={() => players.toggleEnabled(player)}
                             >
                                 {#if player.enabled}
@@ -162,6 +168,8 @@
 
                             <div
                                 class="clickable-icon setting-editor-extra-setting-button"
+                                aria-label="Remove this player group"
+                                title="Remove this group of unnamed players."
                                 on:click={() => players.remove(player)}
                             >
                                 <div use:removeIcon />
@@ -172,6 +180,8 @@
                 <div class="add-player">
                     <div
                         class="clickable-icon setting-editor-extra-setting-button"
+                        aria-label="Add unnamed players"
+                        title="Add a group of players at the same level for encounter planning."
                         on:click={add}
                         use:addIcon
                     />

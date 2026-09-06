@@ -1,52 +1,75 @@
-import type { SRDMonster } from "src/types/creatures";
 import { writable } from "svelte/store";
 import { players } from "./players";
+import { copyColours, creatureCount, type EncounterCreature } from "../encounter-creatures";
+
 function createEncounter() {
-    const store = writable<Map<SRDMonster, number>>(new Map());
-    const { subscribe, set, update } = store;
+    const store = writable<Map<EncounterCreature, number>>(new Map());
+    // Keep catalogue entries untouched while subsequent adds find their draft row.
+    let drafts = new WeakMap<EncounterCreature, EncounterCreature>();
+    const resolve = (item: EncounterCreature) => drafts.get(item) ?? item;
     return {
         players,
-        subscribe,
-        add: (item: SRDMonster) =>
-            update((monsters) => {
-                monsters.set(item, (monsters.get(item) ?? 0) + 1);
-                return monsters;
-            }),
-        remove: (item: SRDMonster) =>
-            update((monsters) => {
-                let existing = monsters.get(item);
-                if (!existing) return monsters;
-                if (existing == 1) {
-                    monsters.delete(item);
-                }
-                if (existing > 1) {
-                    monsters.set(item, existing - 1);
-                }
-                return monsters; // this line is important to update the store value !!
-            }),
-        delete: (item: SRDMonster) =>
-            update((monsters) => {
-                monsters.delete(item);
-                return monsters;
-            }),
-        set: (item: SRDMonster, count: number) =>
-            update((monsters) => {
-                monsters.set(item, count);
-                return monsters;
-            }),
-        setMultiple: (creatures: [item: SRDMonster, count: number][]) =>
-            update((monsters) => {
-                for (const [item, count] of creatures) {
-                    monsters.set(item, count);
-                }
-                return monsters;
-            }),
-        empty: () => set(new Map()),
-        update: (creature: SRDMonster) =>
-            update((monsters) => {
-                monsters.set(creature, monsters.get(creature) ?? 1);
-                return monsters;
-            })
+        subscribe: store.subscribe,
+        add: (item: EncounterCreature) => store.update((monsters) => {
+            let row = resolve(item);
+            if (!monsters.has(row)) {
+                row = { ...item, miniColours: copyColours(item, 1) };
+                drafts.set(item, row);
+            }
+            const count = (monsters.get(row) ?? 0) + 1;
+            row.miniColours = copyColours(row, count);
+            monsters.set(row, count);
+            return monsters;
+        }),
+        remove: (item: EncounterCreature, index?: number) => store.update((monsters) => {
+            const row = resolve(item);
+            const count = monsters.get(row);
+            if (!count) return monsters;
+            if (index !== undefined && (index < 0 || index >= count)) return monsters;
+            if (count === 1) monsters.delete(row);
+            else {
+                const colours = copyColours(row, count);
+                colours.splice(index ?? count - 1, 1);
+                row.miniColours = colours;
+                monsters.set(row, count - 1);
+            }
+            return monsters;
+        }),
+        delete: (item: EncounterCreature) => store.update((monsters) => {
+            monsters.delete(resolve(item));
+            return monsters;
+        }),
+        set: (item: EncounterCreature, rawCount: number) => store.update((monsters) => {
+            if (!Number.isSafeInteger(rawCount) || rawCount < 1) return monsters;
+            const row = resolve(item);
+            const count = creatureCount(rawCount);
+            row.miniColours = copyColours(row, count);
+            monsters.set(row, count);
+            return monsters;
+        }),
+        setMultiple: (creatures: [EncounterCreature, number][]) => store.update((monsters) => {
+            for (const [item, rawCount] of creatures) {
+                const count = creatureCount(rawCount);
+                const row = { ...item, miniColours: copyColours(item, count) };
+                drafts.set(item, row);
+                monsters.set(row, count);
+            }
+            return monsters;
+        }),
+        empty: () => { drafts = new WeakMap(); store.set(new Map()); },
+        setColour: (item: EncounterCreature, index: number, colour: string | null) => store.update((monsters) => {
+            const row = resolve(item);
+            const count = monsters.get(row);
+            if (!count || index < 0 || index >= count) return monsters;
+            row.miniColours = copyColours(row, count);
+            row.miniColours[index] = colour;
+            return monsters;
+        }),
+        update: (item: EncounterCreature) => store.update((monsters) => {
+            const row = resolve(item);
+            if (monsters.has(row)) monsters.set(row, monsters.get(row));
+            return monsters;
+        })
     };
 }
 

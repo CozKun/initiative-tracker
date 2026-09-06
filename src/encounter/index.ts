@@ -5,8 +5,9 @@ import { Creature } from "../utils/creature";
 import EncounterUI from "./ui/Encounter.svelte";
 import EncounterTable from "./ui/EncounterTable.svelte";
 
-type RawCreatureArray = string | Array<string | { [key: number]: string }>;
-type RawCreature = string | { [key: number]: string };
+type RawCreatureDetails = { creature: string; name?: string; baseColor?: string; [key: string]: unknown };
+type RawCreature = string | { [key: number]: string | RawCreatureDetails };
+type RawCreatureArray = string | RawCreature[];
 type RawPlayers = boolean | "none" | string[];
 export interface EncounterParameters {
     name?: string;
@@ -28,6 +29,7 @@ interface CreatureStats {
     friendly?: boolean;
     static?: boolean;
     rollHP?: boolean;
+    baseColor?: string;
 }
 
 export const equivalent = (
@@ -42,6 +44,7 @@ export const equivalent = (
         creature.xp == existing.xp &&
         creature.hidden == existing.hidden &&
         creature.friendly == existing.friendly &&
+        creature.baseColor == existing.baseColor &&
         creature.static == existing.static
     );
 };
@@ -186,6 +189,7 @@ export class EncounterParser {
                     xp: creature.xp,
                     hidden: creature.hidden,
                     friendly: creature.friendly,
+                    baseColor: creature.baseColor,
                     rollHP: creature.rollHP
                 };
                 const existing = [...creatureMap].find(([c]) =>
@@ -223,9 +227,10 @@ export class EncounterParser {
         } else if (Array.isArray(raw)) {
             monster = raw;
         } else if (typeof raw == "object") {
-            let entries = Object.entries(raw).flat();
-            number = entries[0];
-            monster = entries[1];
+            const entry = Object.entries(raw)[0];
+            if (!entry) return {};
+            number = entry[0];
+            monster = entry[1];
         }
 
         if (!monster) return {};
@@ -322,6 +327,10 @@ export class EncounterParser {
         creature.hidden = hidden ?? creature.hidden;
         creature.friendly = friendly ?? creature.friendly;
         creature.rollHP = rollHP ?? globalRollHP ?? creature.rollHP;
+        if (typeof monster === "object" && !Array.isArray(monster) &&
+            typeof monster.baseColor === "string" && /^#[0-9a-f]{6}$/i.test(monster.baseColor)) {
+            creature.baseColor = monster.baseColor.toUpperCase();
+        }
 
         return { creature, number };
     }

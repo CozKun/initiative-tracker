@@ -17,7 +17,7 @@
 
     export let creature: SRDMonster;
     const add = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("plus-with-circle");
+        new ExtraButtonComponent(node).setIcon("plus-with-circle").setTooltip("Add a copy to the encounter");
     };
     function stringify(
         property: Record<string, any> | string | any[] | number | boolean,
@@ -79,6 +79,7 @@
             <div use:add on:click={() => encounter.add(creature)} />
             <!-- svelte-ignore a11y-mouse-events-have-key-events -->
             <div
+                title="Open creature details. Ctrl/Cmd-click opens a new pane."
                 class="setting-item-name creature-name"
                 on:click={(evt) =>
                     plugin.openCombatant(CreatureCreator.from(creature), evt.ctrlKey || evt.metaKey)}

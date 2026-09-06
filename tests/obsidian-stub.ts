@@ -11,7 +11,28 @@ export class TFile {}
 export class MarkdownRenderChild {}
 export class Notice { constructor(message: string) { console.info(message); } }
 export const parseYaml = () => ({});
-export class Setting {}
+export const stringifyYaml = (value: unknown) => JSON.stringify(value, null, 2);
+export class Modal {
+    containerEl = document.createElement("div");
+    titleEl = Object.assign(document.createElement("h2"), { setText(text: string) { this.textContent = text; } });
+    contentEl = document.createElement("div");
+    constructor(_app: unknown) { this.containerEl.setAttribute("role", "dialog"); this.containerEl.append(this.titleEl, this.contentEl); }
+    open() { document.body.append(this.containerEl); }
+    close() { this.containerEl.remove(); }
+}
+export class Setting {
+    settingEl: HTMLDivElement;
+    constructor(node: HTMLElement) { this.settingEl = document.createElement("div"); node.append(this.settingEl); }
+    setName(name: string) { const label = document.createElement("span"); label.textContent = name; this.settingEl.append(label); return this; }
+    addText(callback: (text: any) => void) {
+        const text = new TextComponent(this.settingEl);
+        callback(Object.assign(text, { setPlaceholder(value: string) { text.inputEl.placeholder = value; return this; } })); return this;
+    }
+    addButton(callback: (button: any) => void) {
+        const button = new ExtraButtonComponent(this.settingEl);
+        callback(Object.assign(button, { setButtonText(value: string) { button.extraSettingsEl.textContent = value; return this; } })); return this;
+    }
+}
 export class Menu {
     items: any[] = [];
     addItem(callback: (item: any) => void) {
@@ -26,7 +47,7 @@ export class ExtraButtonComponent {
     extraSettingsEl: HTMLButtonElement;
     constructor(node: HTMLElement) { this.extraSettingsEl = node.ownerDocument.createElement("button"); node.append(this.extraSettingsEl); }
     setIcon(icon: string) { setIcon(this.extraSettingsEl, icon); return this; }
-    setTooltip(text: string) { this.extraSettingsEl.title = text; return this; }
+    setTooltip(text: string) { this.extraSettingsEl.title = text; this.extraSettingsEl.setAttribute("aria-label", text); return this; }
     setDisabled(disabled: boolean) { this.extraSettingsEl.disabled = disabled; return this; }
     onClick(callback: () => void) { this.extraSettingsEl.onclick = callback; return this; }
 }

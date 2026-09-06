@@ -161,9 +161,9 @@ export default class InitiativeTrackerSettings extends PluginSettingTab {
                 );
             });
         new Setting(containerEl)
-            .setName("Display Mini Base Colours")
+            .setName("Display Mini Colour Indicators")
             .setDesc(
-                "Show the mini base colour column in the initiative tracker. Turning this off hides the column without removing saved colours."
+                "Show the Mini Colour Indicator column for bases, rings, tokens, or other miniature identifiers. Turning this off hides the tracker column without removing saved colours."
             )
             .addToggle((t) => {
                 t.setValue(
