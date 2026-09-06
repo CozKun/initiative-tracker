@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { tooltip } from "src/ui/tooltip";
+    import { tooltip, accessibleName } from "src/ui/tooltip";
     import { setIcon } from "obsidian";
     import { getContext, tick } from "svelte";
     import type InitiativeTracker from "src/main";
@@ -157,7 +157,7 @@
         <div
             class="picker"
             role="dialog"
-            aria-label="Mini Colour Indicator picker" data-tooltip-classes="coz-initiative-tooltip"
+            use:accessibleName={"Mini Colour Indicator picker"}
             use:popover={{ anchor, close: () => (open = false) }}
             on:pointerdown|stopPropagation
             on:click|stopPropagation

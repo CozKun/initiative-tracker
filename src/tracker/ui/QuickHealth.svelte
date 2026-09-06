@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { tooltip } from "src/ui/tooltip";
+    import { tooltip, accessibleName } from "src/ui/tooltip";
     import { onMount } from "svelte";
     import type { Creature } from "src/utils/creature";
     import { tracker } from "../stores/tracker";
@@ -17,7 +17,7 @@
     onMount(() => input.focus());
 </script>
 
-<section class="quick-health" role="dialog" aria-label={`Health: ${session.creature.getName()}`} data-tooltip-classes="coz-initiative-tooltip"
+<section class="quick-health" role="dialog" use:accessibleName={`Health: ${session.creature.getName()}`}
     use:popover={{ anchor: session.anchor, close, placement: "side" }}
     on:click|stopPropagation on:pointerdown|stopPropagation>
     <div class="heading">
@@ -28,7 +28,7 @@
         <strong>{session.creature.getName()}</strong>
         <button class="close" type="button" aria-label="Cancel health adjustment" data-tooltip-classes="coz-initiative-tooltip" on:click={close}>×</button>
     </div>
-    <div class="health-modes" aria-label="Health adjustment" data-tooltip-classes="coz-initiative-tooltip">
+    <div class="health-modes">
         <button type="button" class:selected={!heal} aria-pressed={!heal}
             on:click={() => { heal = false; input.focus(); }}>Damage</button>
         <button type="button" class:selected={heal} aria-pressed={heal}

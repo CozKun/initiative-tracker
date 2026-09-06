@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { tooltip } from "src/ui/tooltip";
+    import { tooltip, accessibleName } from "src/ui/tooltip";
     import { encounter } from "../../stores/encounter";
     import { players } from "../../stores/players";
     import { getRpgSystem } from "src/utils";
@@ -24,8 +24,8 @@
     };
 </script>
 
-<section class="builder-difficulty" aria-label="Encounter difficulty summary" data-tooltip-classes="coz-initiative-tooltip">
-    <div class="section-heading"><h5>Encounter difficulty</h5><span>{rpgSystem.displayName}</span></div>
+<section class="builder-difficulty" use:accessibleName={"Encounter difficulty summary"}>
+    <div class="section-heading"><h3 class="builder-section-heading">Encounter difficulty</h3><span>{rpgSystem.displayName}</span></div>
     {#if plugin.data.rpgSystem !== "dnd5e-55"}
         <div class="difficulty-summary" use:tooltip={difficulty.summary}>
             <strong>{$levels.length ? difficulty.displayName : "Add party levels"}</strong><span>{formattedXp}</span>
@@ -33,7 +33,7 @@
     {/if}
     <DifficultyGauge {difficulty} {thresholds} system={plugin.data.rpgSystem}
         labels={thresholds.map((threshold) => threshold.displayName)} {formattedXp} />
-    <p class="party-context" use:tooltip={"Only enabled players with a level count towards the party's difficulty thresholds. Allied creatures are excluded; hidden enemies still count."}>
+    <p class="party-context">
         {$levels.length} enabled player{$levels.length === 1 ? "" : "s"}{#if filtered} · {filtered} allied creature{filtered === 1 ? "" : "s"} excluded{/if}
     </p>
     <details bind:open on:toggle={rememberOpen}>
@@ -60,7 +60,7 @@
 <style>
     .builder-difficulty { min-width: 0; }
     .section-heading, .difficulty-summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.4rem; }
-    h5 { margin: 0 0 0.75rem; }
+    .section-heading { margin-bottom: 0.75rem; }
     .section-heading span, .party-context, .explanation { color: var(--text-muted); font-size: var(--font-ui-smaller); }
     .party-context { margin: 0.3rem 0 0.8rem; }
     .difficulty-summary { margin-bottom: 0.5rem; }

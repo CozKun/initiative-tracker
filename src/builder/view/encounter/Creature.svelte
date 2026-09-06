@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { tooltip } from "src/ui/tooltip";
+    import { tooltip, accessibleName } from "src/ui/tooltip";
     import { setIcon } from "obsidian";
     import { convertFraction, FRIENDLY, getRpgSystem, HIDDEN } from "src/utils";
     import { encounter } from "../../stores/encounter";
@@ -39,7 +39,7 @@
         </div>
     </div>
     <div class="creature-info">
-        <div class="quantity-controls" aria-label={`${creature.name} quantity`} data-tooltip-classes="coz-initiative-tooltip">
+        <div class="quantity-controls">
             <button type="button" class="clickable-icon"  use:tooltip={{ text: "Remove the last copy, keeping the earlier copies and their colours.", label: `Remove last ${creature.name}` }}
                 use:icon={"minus-circle"} on:click={() => encounter.remove(creature)} />
             <input type="number" min="1" step="1" value={count}
@@ -61,7 +61,7 @@
         {#if creature.hidden}<span class="flag">Hidden</span>{/if}
         {#if creature.friendly}<span class="flag">Ally</span>{/if}
     </div>
-    <div class="creature-copies" role="group" aria-label={`${creature.name} copies`} data-tooltip-classes="coz-initiative-tooltip">
+    <div class="creature-copies" role="group" use:accessibleName={`${creature.name} copies`}>
         {#each colours as colour, index}
             <div class="creature-copy">
                 <span>{creature.name} {index + 1}</span>

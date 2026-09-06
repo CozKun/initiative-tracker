@@ -165,6 +165,27 @@ export async function runBuilderChecks(page, url, out, check) {
 
     await page.getByLabel('Select a party',{exact:true}).selectOption('Test party');
     const addCopy = page.getByRole('button',{name:'Add another Goblin',exact:true});
+    for (const selector of ['.builder-party','.builder-difficulty','.creature-copies']) {
+        const region = page.locator(selector);
+        assert.equal(await region.getAttribute('aria-label'),null);
+        assert.ok(await region.getAttribute('aria-labelledby'));
+        const bounds = await region.boundingBox();
+        await region.hover({position:{x:1,y:bounds.height-2}});
+        await page.waitForTimeout(400);
+        assert.equal(await page.getByRole('tooltip').count(),0);
+    }
+    assert.equal(await page.getByRole('region',{name:'Encounter party',exact:true}).count(),1);
+    assert.equal(await page.getByRole('region',{name:'Encounter difficulty summary',exact:true}).count(),1);
+    assert.equal(await page.getByRole('group',{name:'Goblin copies',exact:true}).count(),1);
+    await page.addStyleTag({content: '.markdown-rendered h3, .markdown-rendered h5 {font-size:9px;color:red;font-family:serif;font-variant:small-caps;letter-spacing:3px;text-transform:uppercase;}'});
+    for (const name of ['Party','Encounter difficulty']) {
+        const style = await page.getByRole('heading',{name,exact:true}).evaluate(el => ({
+            size:getComputedStyle(el).fontSize,variant:getComputedStyle(el).fontVariant,
+            transform:getComputedStyle(el).textTransform,color:getComputedStyle(el).color
+        }));
+        assert.deepEqual(style,{size:'16px',variant:'normal',transform:'none',color:'rgb(229, 230, 236)'});
+    }
+    check('general section space has no tooltips, regions retain accessible names, and headings override tiny theme formatting');
     await addCopy.hover();
     const tooltip = page.getByRole('tooltip');
     await tooltip.waitFor();

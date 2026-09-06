@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.23-beta.4 — 2026-09-06 (beta only)
+
+* Removed hover popups from general party/difficulty sections, creature-copy groups, quantity wrappers, empty difficulty bars, and shared dialog backgrounds. Region and dialog names remain available to assistive technology without triggering Obsidian's aria-label tooltip handling.
+* Kept explanatory tooltips on individual controls and difficulty values.
+* Party and Encounter difficulty now use matching, readable section headings with explicit size, colour and typography, avoiding the theme's small H5 formatting.
+
+Validation: production build and 34 browser checks, including hovering general section space, preserved accessible names, and heading size under simulated compact theme styles. Stable remains 13.0.22.
+
 ### 13.0.23-beta.3 — 2026-09-06 (beta only)
 
 * D&D 5.5e difficulty bands now show each bracket's XP range and highlight the current bracket. The XP needed to reach the next bracket or drop into the previous one stays visible even when Party budgets is collapsed.

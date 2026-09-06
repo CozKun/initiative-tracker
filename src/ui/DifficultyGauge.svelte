@@ -45,7 +45,7 @@
                 {/each}
                 <span class="difficulty-marker" style:left={`${$difficultyBar * 100}%`} aria-hidden="true" />
             </div>
-            <div class="difficulty-legend" aria-label="Difficulty bands" data-tooltip-classes="coz-initiative-tooltip">
+            <div class="difficulty-legend">
                 {#each scale.bands as band}
                     <span class="legend-item" class:current={scale.current.name === band.name} use:tooltip={bandHelp(band)}>
                         <span class="legend-name"><i data-tier={band.name} aria-hidden="true" />{band.name}</span>
@@ -53,20 +53,21 @@
                     </span>
                 {/each}
             </div>
-            <div class="difficulty-distance" aria-label="XP to neighbouring difficulty brackets" data-tooltip-classes="coz-initiative-tooltip">
+            <div class="difficulty-distance">
                 <span class="next-bracket">{#if scale.next}<strong>{scale.next.add.toLocaleString()} XP</strong> to {scale.next.name}{:else}Highest bracket{/if}</span>
                 <span class="previous-bracket">{#if scale.previous}Remove <strong>{scale.previous.remove.toLocaleString()} XP</strong> for {scale.previous.name}{:else}Lowest bracket{/if}</span>
             </div>
         {:else}
-            <div class="difficulty-empty" use:tooltip={summary} />
+            <div class="difficulty-empty" />
         {/if}
     </div>
 {:else}
-<div class="difficulty-bar-container" aria-label={summary} data-tooltip-classes="coz-initiative-tooltip">
+<div class="difficulty-bar-container">
     <span>{labels?.[0] ?? ""}</span>
     <span
         ><meter
             class="difficulty-bar"
+            use:tooltip={{ text: summary, label: "Encounter difficulty" }}
             min="0"
             low="0.33"
             high="0.66"

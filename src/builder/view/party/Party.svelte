@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { tooltip } from "src/ui/tooltip";
+    import { tooltip, accessibleName } from "src/ui/tooltip";
     import { setIcon } from "obsidian";
     import { getContext } from "svelte";
     import { get } from "svelte/store";
@@ -29,10 +29,10 @@
     const icon = (node: HTMLElement, name: string) => setIcon(node, name);
 </script>
 
-<section class="builder-party" aria-label="Encounter party" data-tooltip-classes="coz-initiative-tooltip">
+<section class="builder-party" use:accessibleName={"Encounter party"}>
     <details class="party-panel" bind:open on:toggle={rememberOpen}>
-        <summary use:tooltip={{ text: "Expand or collapse the party section.", label: "Party" }}>
-            <h5>Party</h5>
+        <summary>
+            <h3 class="builder-section-heading">Party</h3>
             <span class="party-count">{$levels.length} included</span>
             <span class="chevron" class:expanded={open} use:icon={"chevron-right"} aria-hidden="true" />
         </summary>
@@ -91,7 +91,6 @@
     .builder-party { min-width: 0; }
     summary { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; list-style: none; margin-bottom: 0.75rem; }
     summary::-webkit-details-marker { display: none; }
-    h5 { margin: 0; font-size: var(--font-ui-small); }
     .party-count { margin-left: auto; color: var(--text-muted); font-size: var(--font-ui-smaller); }
     .chevron { display: flex; color: var(--text-muted); transition: transform 0.15s; }
     .chevron.expanded { transform: rotate(90deg); }

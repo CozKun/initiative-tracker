@@ -1,5 +1,18 @@
 @import "./main.css";
 
+.initiative-tracker.encounter-builder .builder-section-heading {
+    margin: 0;
+    font-family: var(--font-interface, sans-serif);
+    font-size: 1rem;
+    font-weight: 600;
+    font-style: normal;
+    font-variant: normal;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--text-normal);
+}
+
 .tooltip.coz-initiative-tooltip {
     --background-modifier-message: var(--background-secondary);
     background: var(--background-secondary);

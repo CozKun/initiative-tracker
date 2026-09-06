@@ -8,6 +8,28 @@ export const tooltipOptions: TooltipOptions = {
 
 type TooltipContent = string | { text: string; label?: string };
 
+/** Name a region or dialog without triggering Obsidian's aria-label tooltips. */
+export function accessibleName(node: HTMLElement, name: string) {
+    const originalLabel = node.getAttribute("aria-label");
+    const originalLabelledBy = node.getAttribute("aria-labelledby");
+    const label = node.ownerDocument.createElement("span");
+    label.id = `initiative-region-${getId()}`;
+    label.hidden = true;
+    node.ownerDocument.body.append(label);
+    const update = (value: string) => {
+        label.textContent = value;
+        node.removeAttribute("aria-label");
+        node.setAttribute("aria-labelledby", label.id);
+    };
+    update(name);
+    return { update, destroy() {
+        label.remove();
+        if (originalLabel !== null) node.setAttribute("aria-label", originalLabel);
+        if (originalLabelledBy !== null) node.setAttribute("aria-labelledby", originalLabelledBy);
+        else node.removeAttribute("aria-labelledby");
+    } };
+}
+
 /** Use Obsidian's tooltip engine while keeping short, meaningful accessible names. */
 export function tooltip(node: HTMLElement, content: TooltipContent) {
     const originalLabel = node.getAttribute("aria-label");
