@@ -10,6 +10,7 @@ on:
 
 jobs:
     publish-npm:
+        if: github.repository == 'Obsidian-TTRPG-Community/initiative-tracker'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v3

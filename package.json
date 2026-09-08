@@ -1,7 +1,7 @@
 {
-    "name": "@javalent/initiative-tracker",
-    "version": "13.0.22",
-    "description": "TTRPG Initiative Tracker for Obsidian.md",
+    "name": "coz-initiative-tracker",
+    "version": "13.0.23",
+    "description": "Community Edition of Initiative Tracker for Obsidian, focused on in-person tabletop play.",
     "types": "./dist/index.d.ts",
     "scripts": {
         "build": "node esbuild.config.mjs production && tsc --project tsconfig.json --emitDeclarationOnly --declaration --declarationMap --outdir ./dist",
@@ -11,8 +11,8 @@
         "dev": "node esbuild.config.mjs"
     },
     "keywords": [],
-    "author": "",
-    "license": "MIT",
+    "author": "CozKun (Community Edition), Jeremy Valentine (original author)",
+    "license": "GPL-3.0-only",
     "devDependencies": {
         "@codemirror/commands": "^6.2.5",
         "@codemirror/lang-javascript": "^6.2.1",
@@ -37,5 +37,6 @@
         "svelte-preprocess": "^5.0.4",
         "tslib": "^2.6.2",
         "typescript": "^5.4.5"
-    }
+    },
+    "private": true
 }

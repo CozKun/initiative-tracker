@@ -8,7 +8,7 @@ if (manifest.id !== "coz-initiative-tracker" || manifest.version.includes("-")) 
 }
 const output = path.resolve("dist/stable", manifest.id);
 await mkdir(output, { recursive: true });
-const files = ["main.js", "styles.css", "manifest.json", "CHANGELOG.md"];
+const files = ["main.js", "styles.css", "manifest.json", "CHANGELOG.md", "README.md", "LICENSE"];
 const hashes = {};
 for (const file of files) {
     await copyFile(file, path.join(output, file));

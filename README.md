@@ -1,52 +1,99 @@
-> 🥇 Our documentation has moved ***[here](https://plugins.javalent.com/it)***.
->
-> <a href='https://www.buymeacoffee.com/valentine195' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
----
+# Initiative Tracker — Community Edition
 
-The Initiative Tracker plugin for **[Obsidian](https://obsidian.md)** allows you to keep track of initiative and turn order during combat encounters in tabletop role-playing games.
+A community fork of Initiative Tracker for **[Obsidian](https://obsidian.md)**, maintained by **[CozKun](https://github.com/CozKun)** and focused on running combat at the table: quick HP changes, clearer encounter planning and colour indicators for telling your miniatures apart.
 
-With this plugin, you can add creatures and NPCs to the initiative tracker, and track their health, armor class, and other stats. The plugin also calculates experience points for creatures, and supports both custom and SRD creatures from the **[Fantasy Statblocks](https://github.com/javalent/fantasy-statblocks)** plugin.
+**[Download the latest release](https://github.com/CozKun/initiative-tracker/releases/latest)** · **[Changelog](CHANGELOG.md)** · **[Report an issue](https://github.com/CozKun/initiative-tracker/issues)**
 
-## Features
-- Add and remove creatures from the encounter
-- Input creature name, HP, AC and initiative
-- Calculate creature XP based on level or challenge rating
-- Group identical creatures together to simplify the encounter
-- Set creature display names to differentiate identical creatures
-- Supports dice rolls to add random amount creatures
-- Keep track of creature HP, AC and status
-- Sort creatures by initiative automatically
-- Add several encounters in one code block
-- Automatically save and load encounters
-- And much, much more...
+## Credit where it belongs
 
-### Quickstart
+This edition builds on the work of **Jeremy Valentine (Javalent)** and the **Obsidian TTRPG Community contributors**. They created the initiative tracking, encounter building, saved encounters and integrations that make this fork possible. Thank you for the considerable work that went into the original.
 
-- Install the Initiative Tracker plugin in Obsidian.
-- Open a note where you want to keep track of your encounter.
-- Create a code block with the language set to \`\`\`encounter.
+* [Original Initiative Tracker repository](https://github.com/Obsidian-TTRPG-Community/initiative-tracker)
+* [Original documentation](https://plugins.javalent.com/it) — useful for shared features; Community Edition controls may differ.
+* [Support Jeremy's work](https://www.buymeacoffee.com/valentine195)
+
+This is an independently maintained fork, not an official release or endorsement from the original maintainers. Please report Community Edition issues **in this repository**. The original [GNU GPL v3 licence](LICENSE) is retained.
+
+## What Community Edition adds
+
+### Faster combat at the table
+
+* **Quick Damage/Heal:** click HP, enter an amount and press Enter. Escape or an outside click cancels. Clicking another creature's HP switches the target, making a misclick easy to correct.
+* **Separate effects:** saving throws, resistance, conditions, temporary/max HP and multipliers remain available through **Apply effect…**, **Add targets** and the creature's context menu.
+* **Mini Colour Indicators:** identify individual creatures using bases, rings, tokens or other coloured markers. The picker remembers your last eight colours and includes **No colour**.
+* **Compact tracker layout:** a drag-order lock, flexible name column and compact difficulty display keep useful information close at hand. Right-click a creature for its additional actions.
+
+### Clearer encounter planning
+
+* **D&D 5.5e difficulty:** Trivial, Low, Moderate and High bands use the revised party thresholds and enemy XP without a creature-count multiplier. The builder shows bracket ranges and the XP needed to move into the next or previous bracket; the tracker stays compact.
+* **Individual copies within groups:** multiple creatures appear as nested copies, each with its own colour and remove control. Colours survive saving, loading, copying encounter blocks and starting the tracker.
+* **Visible XP:** a sortable bestiary XP column, XP per creature and group totals make encounters easier to compare.
+* **Refreshed party controls:** include or exclude named characters, manage groups by player count and level, and choose saved parties. The panel remembers whether you left it expanded.
+* **Consistent headings and tooltips:** explanatory help stays on relevant controls, with styling that follows the active theme.
+
+The existing tracker, saved encounters, encounter blocks and integrations remain available. See the [changelog](CHANGELOG.md) for the full history. **13.0.23** is the first stable Community Edition release; its numbering continues the upstream version line.
+
+## Install manually
+
+Community Edition is distributed through **GitHub Releases**. It is **not listed in Obsidian's Community plugins directory**; installing the directory's original Initiative Tracker does not install this fork.
+
+Requires **Obsidian 1.7.2 or newer**. This release has been tested on desktop; the new controls have not been validated on mobile, and some creature actions use right-click.
+
+1. Download **`coz-initiative-tracker-13.0.23.zip`** from the [latest release](https://github.com/CozKun/initiative-tracker/releases/latest). Choose the named plugin ZIP, not GitHub's automatic **Source code** archives.
+2. Close Obsidian. Open your vault's `.obsidian/plugins/` folder; create `plugins` if necessary. Your file manager may hide `.obsidian`.
+3. Extract the ZIP into `plugins`. The final layout must contain:
+
+   ```text
+   Your Vault/
+     .obsidian/
+       plugins/
+         coz-initiative-tracker/
+           main.js
+           manifest.json
+           styles.css
+   ```
+
+   Avoid an extra nested plugin folder. Alternatively, download the three individual release assets and place them directly in `coz-initiative-tracker`.
+4. Reopen Obsidian. In **Settings → Community plugins**, turn off Restricted mode if necessary, then enable **Initiative Tracker Community Edition**.
+5. Open the command palette and choose **Open Initiative Tracker** or **Open Encounter Builder** under this plugin.
+
+### Updating or switching editions
+
+Close Obsidian and replace `main.js`, `manifest.json` and `styles.css` with the new release files. **Keep `data.json`**: it contains your settings and saved state. Back up the plugin folder before updating. Updates are manual for now.
+
+The stable plugin ID remains `coz-initiative-tracker`, so existing private Community Edition installations update in place even though the displayed name has changed.
+
+The original plugin, Community Edition and the beta use separate folders and settings. Disable the original and beta before enabling this release: they share view types and encounter-block handling, so running several editions together can conflict. Installation does not automatically migrate their settings or encounters.
+
+To carry beta settings and encounters over, back up both plugin folders, close Obsidian, then copy the beta's `data.json` into `coz-initiative-tracker`. This replaces the stable edition's existing saved state.
+
+## Getting started
+
+Open the encounter builder, configure your party, add creatures and assign colours to individual copies. Start the encounter when ready. In the tracker, click HP for quick damage or healing; right-click a creature for additional actions.
+
+Select **D&D 5.5e** in the plugin's RPG system setting for the new difficulty bands. Other supported systems keep their own calculations.
+
+You can also launch encounters from a note:
 
 ````yaml
 ```encounter
-name: Example
+name: Goblin ambush
 creatures:
- - 3: Goblin
+  - 3: Goblin
 ```
 ````
 
-- Add creatures to the encounter by name, dice roll or bestiary entry.
-- Launch the encounter by clicking on the play button, and start tracking initiative.
+Use creature names available in your bestiary. [Fantasy Statblocks](https://github.com/javalent/fantasy-statblocks) supplies bestiary integration, and [Dice Roller](https://github.com/javalent/dice-roller) provides integrated dice rolling when installed. See the [original documentation](https://plugins.javalent.com/it) for the wider encounter syntax and shared features.
 
-Check out the **[plugin documentation](https://plugins.javalent.com/it)** for more detailed instructions and examples.
+## Feedback and development
 
-## Support
+[Open an issue here](https://github.com/CozKun/initiative-tracker/issues) with your plugin version, Obsidian version, theme and reproduction steps. Screenshots are useful for layout issues.
 
-If you encounter any issues, want to give back and help out, or have suggestions for new features, file an issue on the **[GitHub repository](https://github.com/valentine195/obsidian-initiative-tracker/issues)**.
+To build from source with Node.js 20 and npm:
 
-### TTRPG plugins
+```sh
+npm ci
+npm run build:stable
+```
 
-If you're using Obsidian to run/plan a TTRPG, you may find my other plugins useful:
-
-- **[Obsidian Leaflet](https://github.com/valentine195/obsidian-leaflet-plugin)** Adds interactive maps to Obsidian notes
-- **[Dice Roller](https://github.com/valentine195/obsidian-dice-roller)** Inline dice rolling for Obsidian
-- **[Fantasy Statblocks](https://github.com/valentine195/obsidian-5e-statblocks)** Format Statblocks inside Obsidian
+Installable files are written to `dist/stable/coz-initiative-tracker/`. The source is available under [GPL v3](LICENSE); upstream history and attribution are preserved.

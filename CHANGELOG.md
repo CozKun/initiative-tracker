@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.23 — 2026-09-08
+
+First stable Community Edition release on GitHub, promoting the approved `13.0.23-beta.6` build. Version numbering continues the upstream line; earlier Community Edition builds were private updates or prereleases.
+
+* Includes quick Damage/Heal controls, separate effects and conditions, recent colours, No colour, Mini Colour Indicators and the drag-order lock from earlier Community Edition builds.
+* Refreshed the encounter builder with nested individual creature copies and per-copy colours that survive save/load, encounter-block copying and starting combat.
+* Added a sortable bestiary XP column, per-creature/group XP totals, clearer party controls and corrected unnamed-player counts in difficulty budgets.
+* Kept the tracker compact while the builder shows D&D 5.5e bracket ranges and exact XP distances to neighbouring brackets.
+* Added consistent headings, relevant theme-aware tooltips and a full-width divider below the encounter header.
+* Renamed the displayed stable plugin to **Initiative Tracker Community Edition**, retaining `coz-initiative-tracker` for existing settings and installations.
+* Reworked the README with original-author credit, features, manual installation/update instructions and fork-specific support links. Retained the upstream GPL v3 licence and aligned package metadata with it.
+
+The preceding beta entries document individual changes and validation. This release is distributed manually through GitHub Releases; it is not an Obsidian Community plugins directory submission.
+
 ### 13.0.23-beta.6 — 2026-09-06 (beta only)
 
 * Added a full-width divider and breathing room below the builder's encounter header. The divider uses the theme's border colour and replaces decorative heading stubs on that title.

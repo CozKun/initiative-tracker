@@ -15,6 +15,7 @@ name: release-please
 
 jobs:
     release-please:
+        if: github.repository == 'Obsidian-TTRPG-Community/initiative-tracker'
         runs-on: ubuntu-latest
         outputs:
             release_created: ${{ steps.release.outputs.release_created }}

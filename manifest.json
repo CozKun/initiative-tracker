@@ -1,10 +1,10 @@
 {
     "id": "coz-initiative-tracker",
-    "name": "Coz Initiative Tracker",
-    "version": "13.0.22",
+    "name": "Initiative Tracker Community Edition",
+    "version": "13.0.23",
     "minAppVersion": "1.7.2",
-    "author": "Jeremy Valentine",
-    "description": "TTRPG Initiative Tracker for Obsidian.md",
-    "authorUrl": "https://github.com/valentine195/obsidian-initiative-tracker",
+    "author": "CozKun (Community Edition), Jeremy Valentine (original author)",
+    "description": "Track tabletop combat and build encounters, with quick HP controls, Mini Colour Indicators and D&D 5.5e difficulty bands.",
+    "authorUrl": "https://github.com/CozKun/initiative-tracker",
     "isDesktopOnly": false
 }
