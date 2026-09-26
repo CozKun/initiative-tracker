@@ -1,4 +1,8 @@
 <script lang="ts">
+    import AddCombatant from "../src/tracker/ui/create/AddCombatant.svelte";
+    import SaveEncounter from "../src/tracker/ui/SaveEncounter.svelte";
+    import PlayerView from "../src/tracker/player/PlayerView.svelte";
+    import { sharesInitiative } from "../src/utils/shared-initiative";
     import { setContext } from "svelte";
     import { get, readable } from "svelte/store";
     import { tracker } from "../src/tracker/stores/tracker";
@@ -33,7 +37,8 @@
         view: { leaf: {} },
         canUseDiceRoller: false,
         getInitiativeValue() { return 10; },
-        openCombatant() {}
+        players: new Map(), bestiary: [{name:"Ogre",hp:59,ac:11,modifier:1}],
+        openCombatant(creature: Creature) { (window as any).openedCombatant = creature.id; }
     };
     plugin.app = { workspace: { trigger: (_name: string, state: unknown) => {
         plugin.data.state = state; void plugin.saveSettings();
@@ -49,6 +54,7 @@
     tracker.set([first, second]);
     setContext("plugin", plugin);
     let showDifficulty = false;
+    let showAdd = false, showSave = false, showPlayer = false;
     const setDifficultyScenario = (levels: number[], xp: number, system = "dnd5e-55") => {
         plugin.data.rpgSystem = system;
         tracker.setData(plugin.data);
@@ -60,7 +66,7 @@
         showDifficulty = true;
     };
     (window as any).fixture = { tracker, first, second, plugin, log, get, recentColours,
-        dnd55DifficultyScale, getRpgSystem, setDifficultyScenario };
+        dnd55DifficultyScale, getRpgSystem, setDifficultyScenario, Creature, sharesInitiative };
     const builderMode = new URLSearchParams(location.search).has("builder");
     const catalogueGoblin = { name: "Goblin", hp: 30, ac: 14, cr: "1/4", xp: 50 };
     if (builderMode) {
@@ -112,6 +118,12 @@
     {#key $updateSession}<Updating />{/key}
     {#if $quickHealth}{#key $quickHealth}<QuickHealth session={$quickHealth} />{/key}{/if}
     <button class="outside">Outside panel</button>
+    <button on:click={() => showAdd = true}>Test add combatant</button>
+    <button on:click={() => showSave = true}>Test save encounter</button>
+    <button on:click={() => showPlayer = !showPlayer}>Test player view</button>
+    {#if showAdd}<div class="test-add"><AddCombatant {plugin} on:close={() => showAdd = false} /></div>{/if}
+    {#if showSave}<SaveEncounter on:cancel={() => showSave = false} />{/if}
+    {#if showPlayer}<div class="test-player"><PlayerView /></div>{/if}
     {/if}
 </main>
 

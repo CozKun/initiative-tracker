@@ -33,6 +33,7 @@ export class Creature {
     level: number;
     player: boolean;
     status: Set<Condition> = new Set();
+    autoUnconsciousName?: string;
     marker: string;
     baseColor?: string;
     initiative: number;
@@ -59,15 +60,28 @@ export class Creature {
         }
         this.modifier = this.modifier ?? 0;
     }
+    syncUnconscious(previousHP: number, apply: boolean, remove: boolean, condition?: Condition) {
+        if (remove && previousHP <= 0 && this.hp > 0 && this.autoUnconsciousName) {
+            this.status = new Set([...this.status].filter(s => s.name !== this.autoUnconsciousName));
+            this.autoUnconsciousName = undefined;
+        }
+        if (apply && this.hp <= 0 && condition && ![...this.status].some(s => s.name === condition.name)) {
+            this.addCondition(condition);
+            this.autoUnconsciousName = condition.name;
+        }
+    }
     addCondition(condition: Condition) {
+        if (this.autoUnconsciousName === condition.name) this.autoUnconsciousName = undefined;
         if (![...this.status].find(cond => cond.name === condition.name && cond.amount === condition.amount)) {
             this.status.add(condition);
         }
     }
     removeCondition(condition: Condition) {
+        if (this.autoUnconsciousName === condition.name) this.autoUnconsciousName = undefined;
         this.status = new Set(
             [...this.status].filter((s) => s.id != condition.id)
-        );    }
+        );
+    }
     constructor(public creature: HomebrewCreature, initiative: number = 0) {
         this.name = creature.name;
         this.display = creature.display;
@@ -237,6 +251,7 @@ export class Creature {
             currentHP: this.hp,
             tempHP: this.temp,
             status: Array.from(this.status).map((c) => c.name),
+            autoUnconsciousName: this.autoUnconsciousName,
             enabled: this.enabled,
             level: this.level,
             player: this.player,
@@ -280,6 +295,7 @@ export class Creature {
             }
         }
         creature.status = new Set(statuses);
+        creature.autoUnconsciousName = statuses.some(s => s.name === state.autoUnconsciousName) ? state.autoUnconsciousName : undefined;
         creature.active = state.active;
         creature.baseColor = state.baseColor;
         return creature;

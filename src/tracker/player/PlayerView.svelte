@@ -60,7 +60,10 @@
         {#each activeAndVisible as creature (creature.id)}
             <tr class:active={amIActive(creature) && $state}>
                 <td class="center">{creature.initiative}</td>
-                <td class='name'>
+                <td class='name' class:ally={creature.friendly}>
+                    {#if ($data.showPlayerViewColours ?? true) && creature.baseColor}
+                        <span class="mini-colour" style:background-color={creature.baseColor} title={`Mini Colour Indicator: ${creature.baseColor}`} />
+                    {/if}
                     {#if creature.friendly}
                         <div
                             class="contains-icon"
@@ -89,6 +92,8 @@
 </table>
 
 <style scoped>
+    .ally { font-weight: 700; }
+    .mini-colour { display: inline-block; flex-shrink: 0; width: 0.85em; height: 0.85em; border: 1px solid var(--background-modifier-border); border-radius: 50%; }
     .full-center {
         width: 100%;
         height: 100%;

@@ -97,7 +97,7 @@
         {#if creature.player}
             <strong class="name player">{creature.name}</strong>
         {:else}
-            <span class="name">{name()}</span>
+            <span class="name" class:ally={creature.friendly}>{name()}</span>
         {/if}
     </div>
     <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -158,6 +158,7 @@
 </td>
 
 <style scoped>
+    .ally { font-weight: 700; }
     .health-selected { outline: 2px solid var(--interactive-accent); outline-offset: -2px; border-radius: var(--radius-s); }
     .name-holder {
         display: flex;

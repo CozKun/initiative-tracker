@@ -8,6 +8,7 @@ import {
     writable
 } from "svelte/store";
 import { equivalent } from "../../encounter";
+import { sharesInitiative } from "src/utils/shared-initiative";
 import { Events, Platform, TFile } from "obsidian";
 import type { UpdateLogMessage } from "src/logger/logger.types";
 import type { Condition } from "src/types/creatures";
@@ -31,6 +32,7 @@ type HPUpdate = {
     saved: boolean;
     resist: boolean;
     customMod: number | string;
+    amount?: string;
 };
 type CreatureUpdate = {
     hp?: number;
@@ -103,24 +105,8 @@ function createTracker() {
     });
     let _settings: InitiativeTrackerData | null;
     
-    const condensed = derived(creatures, (values) => {
-        if (_settings?.condense) {
-            values.forEach((creature, _, arr) => {
-                const equiv = arr.filter((c) => equivalent(c, creature));
-                const initiatives = equiv.map((i) => i.initiative);
-                const initiative =
-                    initiatives[Math.floor(Math.random() * initiatives.length)];
-                equiv.forEach((eq) => {
-                    if (eq.static) return;
-                    eq.initiative = initiative;
-                });
-            });
-        }
-        return values;
-    });
-
     let current_order: Creature[] = [];
-    const ordered = derived([condensed, data], ([values, data]) => {
+    const ordered = derived([creatures, data], ([values, data]) => {
         const sort = [...values];
         sort.sort((a, b) => {
             /* Order creatures in this order:
@@ -216,13 +202,10 @@ function createTracker() {
                             break;
                     }
                 }
+                const previousHP = creature.hp;
                 creature.hp += change.hp;
-                if (_settings.autoStatus && creature.hp <= 0) {
-                    const unc = _settings.statuses.find(
-                        (s) => s.id == _settings.unconsciousId
-                    );
-                    if (unc) creature.addCondition(unc);
-                }
+                creature.syncUnconscious(previousHP, _settings.autoStatus, _settings.autoRemoveUnconscious,
+                    _settings.statuses.find(s => s.id === _settings.unconsciousId));
             }
             if (change.max) {
                 creature.current_max = Math.max(
@@ -351,8 +334,9 @@ function createTracker() {
         plugin: InitiativeTracker,
         creatures: Creature[]
     ): Creature[] {
+        const rolled: Creature[] = [];
         for (let creature of creatures) {
-            if (creature.static && creature.initiative) continue;
+            if (creature.static && Number.isFinite(creature.initiative)) continue;
             creature.active = false;
             if (
                 creature.player &&
@@ -367,9 +351,9 @@ function createTracker() {
             ) {
                 creature.initiative = 0;
             } else {
-                creature.initiative = plugin.getInitiativeValue(
-                    creature.modifier
-                );
+                const shared = plugin.data.condense && rolled.find(other => sharesInitiative(other, creature));
+                creature.initiative = shared ? shared.initiative : plugin.getInitiativeValue(creature.modifier);
+                rolled.push(creature);
             }
             creature.manualOrder = null;
         }
@@ -382,8 +366,8 @@ function createTracker() {
 
         data,
         setData: (settings: InitiativeTrackerData) => {
-            data.set(settings);
             _settings = settings;
+            data.set(settings);
             dragEnabled.set(settings.dragEnabled ?? false);
         },
 
@@ -534,7 +518,8 @@ function createTracker() {
             toAddString: string,
             statuses: Condition[],
             ac: string,
-            removeStatuses: Condition[] = []
+            removeStatuses: Condition[] = [],
+            healing = false
         ) =>
             updating.update((updatingCreatures) => {
                 if ([...updatingCreatures.values()].some((entry) => !isValidHpMultiplier(entry.customMod))) {
@@ -544,11 +529,12 @@ function createTracker() {
                 const updates: CreatureUpdates[] = [];
 
                 updatingCreatures.forEach((entry, creature) => {
-                    const roundHalf = !toAddString.includes(".");
+                    const targetAmount = healing && entry.amount?.trim() ? `-${entry.amount}` : toAddString;
+                    const roundHalf = !targetAmount.includes(".");
                     const change: CreatureUpdate = {};
                     const modifier =
-                        (entry.saved ? 0.5 : 1) *
-                        (entry.resist ? 0.5 : 1) *
+                        (entry.saved && !healing ? 0.5 : 1) *
+                        (entry.resist && !healing ? 0.5 : 1) *
                         Number(entry.customMod);
                     const name = [creature.name];
                     if (creature.number > 0) {
@@ -567,14 +553,14 @@ function createTracker() {
                         ac_add: false
                     };
 
-                    if (toAddString.charAt(0) == "t") {
-                        let toAdd = Number(toAddString.slice(1));
+                    if (targetAmount.charAt(0) == "t") {
+                        let toAdd = Number(targetAmount.slice(1));
                         message.hp = toAdd;
                         message.temp = true;
                         change.temp = toAdd;
                     } else {
-                        const maxHpDamage = toAddString.charAt(0) === "m";
-                        let toAdd = Number(toAddString.slice(+maxHpDamage));
+                        const maxHpDamage = targetAmount.charAt(0) === "m";
+                        let toAdd = Number(targetAmount.slice(+maxHpDamage));
                         toAdd =
                             -1 *
                             Math.sign(toAdd) *
@@ -592,14 +578,16 @@ function createTracker() {
                     }
                     if (statuses.length) {
                         message.status = statuses.map((s) => s.name);
-                        if (!entry.saved) {
+                        if (!entry.saved || healing) {
                             change.status = statuses;
                         } else {
                             message.saved = true;
                         }
                     }
                     if (removeStatuses.length) {
-                        change.remove_status = removeStatuses;
+                        message.remove_status = removeStatuses.map(s => s.name);
+                        change.remove_status = [...creature.status].filter(s =>
+                            removeStatuses.some(selected => selected.name === s.name));
                     }
                     if (ac) {
                         if (ac.charAt(0) == "+" || ac.charAt(0) == "-") {
@@ -761,7 +749,7 @@ function createTracker() {
                 } else {
                     for (const creature of items) {
                         const existing = current_order.find((c) =>
-                            equivalent(c, creature)
+                            c !== creature && sharesInitiative(c, creature)
                         );
                         if (existing) {
                             creature.initiative = existing.initiative;
@@ -778,6 +766,13 @@ function createTracker() {
                 setNumbers(creatures);
                 return creatures;
             }),
+        addPrepared: (plugin: InitiativeTracker, rollHP: boolean, ...items: Creature[]) => updateAndSave((creatures) => {
+            if (plugin.canUseDiceRoller && rollHP) setCreatureHP(items, plugin, true);
+            items.forEach(c => { c.active = false; });
+            creatures.push(...items);
+            setNumbers(creatures);
+            return creatures;
+        }),
         remove: (...items: Creature[]) =>
             updateAndSave((creatures) => {
                 creatures = creatures.filter((m) => !items.includes(m));
@@ -883,6 +878,7 @@ function createTracker() {
                     creature.hp = creature.current_max = creature.max;
                     creature.enabled = true;
                     creature.status.clear();
+                    creature.autoUnconsciousName = undefined;
                 }
                 _logger?.log("Encounter HP & Statuses reset");
                 return creatures;
@@ -1209,13 +1205,10 @@ class Tracker {
                             break;
                     }
                 }
+                const previousHP = creature.hp;
                 creature.hp += change.hp;
-                if (this.#data.autoStatus && creature.hp <= 0) {
-                    const unc = this.#data.statuses.find(
-                        (s) => s.id == this.#data.unconsciousId
-                    );
-                    if (unc) creature.addCondition(unc);
-                }
+                creature.syncUnconscious(previousHP, this.#data.autoStatus, this.#data.autoRemoveUnconscious,
+                    this.#data.statuses.find(s => s.id === this.#data.unconsciousId));
             }
             if (change.max) {
                 creature.current_max = Math.max(

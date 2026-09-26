@@ -1,5 +1,6 @@
 export interface CreatureState extends HomebrewCreature {
     status: string[];
+    autoUnconsciousName?: string;
     enabled: boolean;
     currentMaxHP: number;
     currentHP: number;

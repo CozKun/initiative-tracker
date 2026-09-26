@@ -2,13 +2,17 @@ import { App, ButtonComponent, Modal } from "obsidian";
 import type InitiativeTracker from "src/main";
 import type { Creature } from "src/utils/creature";
 import Creator from "./Creator.svelte";
+import AddCombatant from "./AddCombatant.svelte";
 export class AddCreatureModal extends Modal {
+    private component: Creator | AddCombatant;
+    onClose() { this.component?.$destroy(); }
     constructor(public plugin: InitiativeTracker, public creature?: Creature) {
         super(plugin.app);
     }
     onOpen() {
         this.containerEl.addClass("initiative-tracker-modal");
-        new Creator({
+        const Component = this.creature ? Creator : AddCombatant;
+        this.component = new Component({
             target: this.contentEl,
             props: {
                 plugin: this.plugin,
@@ -16,7 +20,8 @@ export class AddCreatureModal extends Modal {
                     ? { creature: this.creature, isEditing: true }
                     : {})
             }
-        }).$on("close", () => this.close());
+        });
+        this.component.$on("close", () => this.close());
     }
 }
 

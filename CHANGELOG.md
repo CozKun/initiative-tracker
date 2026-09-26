@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.24-beta.1 — 2026-09-26 (beta only)
+
+* Save encounters in a movable naming panel, with confirmation before overwriting an existing encounter.
+* Reworked Apply effect into a movable panel with explicit Damage, Heal, temporary HP, maximum HP and condition controls. Open target statblocks without losing the draft; heal selected targets together or enter individual amounts.
+* Added an optional, default-off setting to remove tracker-applied Unconscious when actual HP rises above zero. Manually applied conditions are retained.
+* Refreshed Add creature with bestiary and saved-player search, manual entry, enemy/ally/player roles and explicit initiative choices. Adding combatants preserves the current turn and existing initiatives.
+* Allies retain their icon and now have bold names. Player view shows read-only Mini Colour Indicators, with its own visibility setting.
+* Shared initiative now ignores Mini Colour Indicators while retaining other creature matching rules, including initiative modifiers and ally separation. Players remain individual. Renamed the Group/Expand controls to describe initiative rolls; switching the setting no longer changes current initiatives.
+
+Validation: production beta build and automated browser interaction checks. Live Obsidian/table validation remains pending before stable promotion.
+
 ### 13.0.23 — 2026-09-08
 
 First stable Community Edition release on GitHub, promoting the approved `13.0.23-beta.6` build. Version numbering continues the upstream line; earlier Community Edition builds were private updates or prereleases.

@@ -81,8 +81,8 @@
             item.setIcon(GROUP)
                 .setTitle(
                     plugin.data.condense
-                        ? "Expand Creatures"
-                        : "Group Creatures"
+                        ? "Use individual initiative rolls"
+                        : "Use shared creature initiative"
                 )
                 .onClick(async () => {
                     plugin.data.condense = !plugin.data.condense;
@@ -90,8 +90,8 @@
                     item.setIcon(plugin.data.condense ? EXPAND : GROUP);
                     item.setTitle(
                         plugin.data.condense
-                            ? "Expand Creatures"
-                            : "Group Creatures"
+                            ? "Use individual initiative rolls"
+                            : "Use shared creature initiative"
                     );
                 });
         });

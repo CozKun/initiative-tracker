@@ -1,102 +1,36 @@
 <script lang="ts">
-    import { ExtraButtonComponent } from "obsidian";
-    import { SAVE } from "src/utils";
-
-    import { getContext } from "svelte";
-    import { createEventDispatcher } from "svelte";
+    import { getContext, createEventDispatcher } from "svelte";
     import type InitiativeTracker from "src/main";
     import { tracker } from "../stores/tracker";
-
-    const { name } = tracker;
-    let encounterName = $name;
+    import { floatingPanel } from "./floating-panel";
+    import { accessibleName } from "src/ui/tooltip";
     const plugin = getContext<InitiativeTracker>("plugin");
-
-    let saveButton: ExtraButtonComponent;
-    const checkSave = () => {
-        if (encounterName?.length && saveButton.disabled) {
-            saveButton.setDisabled(false);
-        } else if (!encounterName?.length && !saveButton.disabled) {
-            saveButton.setDisabled(true);
-        }
-    };
-    let checking = false;
-    const save = (node: HTMLElement) => {
-        saveButton = new ExtraButtonComponent(node)
-            .setIcon(SAVE)
-            .setDisabled(
-                !(encounterName != undefined && encounterName?.length > 0)
-            )
-            .onClick(async () => {
-                if (
-                    encounterName &&
-                    encounterName in plugin.data.encounters &&
-                    !checking
-                ) {
-                    checking = true;
-                } else {
-                    plugin.addEncounter(encounterName, {
-                        ...tracker.getEncounterState(),
-                        name: encounterName,
-                        rollHP: plugin.data.rollHP,
-                        timestamp: Date.now()
-                    });
-                    await plugin.saveSettings();
-                    dispatch("cancel");
-                }
-            });
-    };
+    const { name } = tracker;
     const dispatch = createEventDispatcher();
-    const cancel = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("cross").onClick(() => {
-            dispatch("cancel");
-        });
-    };
+    let encounterName = $name ?? "";
+    let checking = false, saving = false, error = "";
+    async function save() {
+        const trimmed = encounterName.trim();
+        if (!trimmed || saving) return;
+        if (trimmed in plugin.data.encounters && !checking) { checking = true; return; }
+        saving = true;
+        try {
+            plugin.addEncounter(trimmed, { ...tracker.getEncounterState(), name: trimmed,
+                rollHP: plugin.data.rollHP, timestamp: Date.now() });
+            await plugin.saveSettings(); dispatch("cancel");
+        } catch { error = "Could not save the encounter. Please try again."; }
+        finally { saving = false; }
+    }
 </script>
-
-<div class="saving-container">
-    <div class="saving-encounter">
-        <span>Save encounter as:</span>
-        <!-- svelte-ignore a11y-autofocus -->
-        <input type="text" bind:value={encounterName} on:input={checkSave} />
-    </div>
-
-    <div class="save-buttons">
-        {#if checking}
-            <span class="checking">
-                <small>
-                    An encounter by that name already exists. Are you sure?
-                </small>
-            </span>
-        {/if}
-        <div class="save" use:save />
-        <div class="cancel" use:cancel />
-    </div>
+<div class="coz-tracker-panel save-panel" role="dialog" aria-modal="false" use:accessibleName={"Save encounter"} use:floatingPanel
+    on:keydown={(e) => { if (e.key === 'Escape') dispatch('cancel'); }}>
+    <header><strong>Save encounter</strong><button class="panel-drag" type="button" aria-label="Move save panel">Move</button></header>
+    <form on:submit|preventDefault={save}>
+        <label>Encounter name<input autofocus bind:value={encounterName} on:input={() => checking = false} /></label>
+        {#if checking}<p>An encounter with that name exists. Overwrite it?</p>{/if}
+        {#if error}<p role="alert">{error}</p>{/if}
+        <footer><button type="button" on:click={() => dispatch('cancel')}>Cancel</button>
+            <button class="mod-cta" type="submit" disabled={!encounterName.trim() || saving}>{checking ? 'Overwrite encounter' : 'Save encounter'}</button></footer>
+    </form>
 </div>
-
-<style>
-    .saving-container {
-        padding: 0.5rem;
-    }
-    .saving-encounter {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    .save-buttons {
-        margin-top: 1rem;
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-    }
-    .save-buttons > div {
-        display: flex;
-        align-items: center;
-    }
-    .save-buttons :global(.clickable-icon) {
-        margin: 0;
-    }
-    .save-buttons > .save :global(.clickable-icon.is-disabled) {
-        cursor: not-allowed;
-        color: var(--text-faint);
-    }
-</style>
+<style>.save-panel { width: 380px; } label { display:flex;flex-direction:column;gap:6px; } input { width:100%; } </style>

@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
+import { runNextBuildChecks } from "./next-build-checks.mjs";
 import { runBuilderChecks } from "./builder-checks.mjs";
 
 const root = process.cwd();
@@ -87,6 +88,7 @@ try {
     }
     await page.getByLabel("Damage amount").press("Escape"); check("invalid and empty damage cannot be applied");
 
+    await page.setViewportSize({width:1200,height:900});
     await hp(1).click(); await page.getByRole("button", {name:"Apply effect…", exact:true}).click();
     assert.equal((await snapshot()).selected,1);
     await page.getByRole("button", {name:"Add targets", exact:true}).click();
@@ -231,6 +233,7 @@ try {
     assert.equal(await page.locator('.difficulty-bands').count(),0);
     check("other RPG systems keep their existing meter");
     await runBuilderChecks(page, `http://127.0.0.1:${server.address().port}`, out, check);
+    await runNextBuildChecks(page, `http://127.0.0.1:${server.address().port}`, out, check);
     assert.deepEqual(errors,[]); check("no browser runtime errors");
     console.log(`${checks} beta interaction checks passed. Screenshots: ${out}`);
 } catch (error) {

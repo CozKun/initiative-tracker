@@ -42,7 +42,6 @@
     let loading = false;
     const editOrAdd = (creature?: Creature) => {
         const modal = new AddCreatureModal(plugin, creature);
-        modal.onClose = () => {};
         modal.open();
     };
     const addButton = (node: HTMLElement) => {

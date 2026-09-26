@@ -32,3 +32,17 @@
     font-weight: normal;
     text-align: left;
 }
+
+/* Shared non-modal tracker panels stay available while statblocks are opened. */
+.coz-tracker-panel {
+    position: fixed; z-index: 80; box-sizing: border-box; overflow: auto;
+    display: flex; flex-direction: column; gap: 12px; padding: 16px;
+    background: var(--background-primary); color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border); border-radius: 10px;
+    box-shadow: var(--shadow-s, 0 8px 30px #0003); font-size: var(--font-ui-small);
+}
+.coz-tracker-panel header, .coz-tracker-panel footer { display:flex;align-items:center;gap:8px; }
+.coz-tracker-panel header strong { flex:1; }
+.coz-tracker-panel footer { justify-content:flex-end;margin-top:10px; }
+.coz-tracker-panel .panel-drag { cursor:move;touch-action:none; }
+.coz-tracker-panel input, .coz-tracker-panel select { max-width:100%; }

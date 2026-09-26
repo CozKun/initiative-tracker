@@ -36,6 +36,7 @@ export interface InitiativeTrackerData {
     hpOverflow: string;
     additiveTemp: boolean;
     autoStatus: boolean;
+    autoRemoveUnconscious: boolean;
     warnedAboutImports: boolean;
     logging: boolean;
     logFolder: string;
@@ -47,6 +48,7 @@ export interface InitiativeTrackerData {
     descending: boolean;
     dragEnabled: boolean;
     showBaseColorColumn: boolean;
+    showPlayerViewColours: boolean;
     recentBaseColours: string[];
     version: number[];
 

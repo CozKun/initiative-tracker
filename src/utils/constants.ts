@@ -54,6 +54,7 @@ export const DEFAULT_SETTINGS: InitiativeTrackerData = {
     condense: false,
     clamp: true,
     autoStatus: true,
+    autoRemoveUnconscious: false,
     beginnerTips: true,
     displayDifficulty: true,
     encounters: {},
@@ -78,6 +79,7 @@ export const DEFAULT_SETTINGS: InitiativeTrackerData = {
     descending: true,
     dragEnabled: false,
     showBaseColorColumn: true,
+    showPlayerViewColours: true,
     recentBaseColours: [],
     builder: {
         showParty: true,

@@ -176,7 +176,7 @@ export default class InitiativeTrackerSettings extends PluginSettingTab {
         new Setting(containerEl)
             .setName("Roll Equivalent Creatures Together")
             .setDesc(
-                "Equivalent creatures (same Name and AC) will roll the same initiative by default."
+                "Matching non-player creatures share initiative when rolled. Mini colours are ignored; different modifiers and allies/enemies stay separate. Changing this setting does not reroll existing combat."
             )
             .addToggle((t) => {
                 t.setValue(this.plugin.data.condense).onChange(async (v) => {
@@ -244,6 +244,18 @@ export default class InitiativeTrackerSettings extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+        new Setting(additionalContainer)
+            .setName("Remove automatic Unconscious on healing")
+            .setDesc("When HP rises from zero or below to above zero, remove only Unconscious added automatically by this tracker. Manual conditions and temporary HP are unaffected.")
+            .addToggle(t => t.setValue(this.plugin.data.autoRemoveUnconscious ?? false).onChange(async v => {
+                this.plugin.data.autoRemoveUnconscious = v; await this.plugin.saveSettings();
+            }));
+        new Setting(additionalContainer)
+            .setName("Player view Mini Colour Indicators")
+            .setDesc("Show read-only colour indicators beside visible creatures in player view.")
+            .addToggle(t => t.setValue(this.plugin.data.showPlayerViewColours ?? true).onChange(async v => {
+                this.plugin.data.showPlayerViewColours = v; await this.plugin.saveSettings();
+            }));
         new Setting(additionalContainer)
             .setName("Additive Temporary HP")
             .setDesc(
