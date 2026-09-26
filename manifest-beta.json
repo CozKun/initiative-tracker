@@ -1,7 +1,7 @@
 {
     "id": "coz-initiative-tracker-beta",
     "name": "Coz Initiative Tracker Beta",
-    "version": "13.0.24-beta.1",
+    "version": "13.0.24-beta.2",
     "minAppVersion": "1.7.2",
     "author": "Jeremy Valentine",
     "description": "TTRPG Initiative Tracker for Obsidian.md",

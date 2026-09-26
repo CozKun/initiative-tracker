@@ -566,8 +566,8 @@ export default class InitiativeTrackerSettings extends PluginSettingTab {
                 );
             });
         new Setting(additionalContainer)
-            .setName("XP System")
-            .setDesc("XP system to use for encounters")
+            .setName("Encounter difficulty system")
+            .setDesc("Choose the encounter calculator and its units (XP, CR or Power). This does not automate the RPG’s combat rules.")
             .addDropdown((d) => {
                 Object.values(RpgSystemSetting).forEach((system) =>
                     d.addOption(

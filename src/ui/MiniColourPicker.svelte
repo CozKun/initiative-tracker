@@ -155,7 +155,7 @@
 
     {#if open}
         <div
-            class="picker"
+            class="picker coz-mini-colour-popover"
             role="dialog"
             use:accessibleName={"Mini Colour Indicator picker"}
             use:popover={{ anchor, close: () => (open = false) }}

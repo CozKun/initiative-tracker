@@ -123,7 +123,9 @@ export async function runNextBuildChecks(page, url, out, check) {
     const handle=panel.getByRole('button',{name:'Move effect panel',exact:true});const before=await panel.boundingBox();await handle.focus();await handle.press('ArrowLeft');
     const after=await panel.boundingBox();assert.equal(Math.round(after.x),Math.round(before.x-20));
     await page.screenshot({path:path.join(out,'effects-wide.png')});
-    await page.setViewportSize({width:360,height:500});const bounds=await panel.boundingBox();
+    await page.setViewportSize({width:360,height:500});
+    await page.waitForFunction(()=>{const b=document.querySelector('.effect-panel').getBoundingClientRect();return b.x>=0&&b.y>=0&&b.right<=360&&b.bottom<=500;});
+    const bounds=await panel.boundingBox();
     assert.ok(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=360&&bounds.y+bounds.height<=500);
     await page.screenshot({path:path.join(out,'effects-narrow.png')});
     await panel.getByRole('button',{name:'Close effect panel',exact:true}).click();

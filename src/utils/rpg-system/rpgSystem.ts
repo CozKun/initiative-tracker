@@ -18,6 +18,12 @@ export abstract class RpgSystem {
     return 0;
   }
 
+  usesGroupBudget(_creature: GenericCreature): boolean { return false; }
+
+  getGroupDifficulty(creature: GenericCreature, count: number, playerLevels: number[]): number {
+    return this.getCreatureDifficulty(creature, playerLevels) * count;
+  }
+
   /** Returns additional information related to the difficulty of a creature relative to the given players. */
   getAdditionalCreatureDifficultyStats(
     creature: GenericCreature,
@@ -48,7 +54,7 @@ export abstract class RpgSystem {
 
   /** Returns the given difficulty value formatted with system-appropriate units, eg "800 XP". */
   formatDifficultyValue(value: number, withUnits?: boolean): string {
-    if (isNaN(value)) return DEFAULT_UNDEFINED;
+    if (!Number.isFinite(value)) return DEFAULT_UNDEFINED;
     return withUnits
         ? `${value.toLocaleString()} ${this.valueUnit}`
         : value.toLocaleString();

@@ -45,7 +45,9 @@ export function getFromCreatureOrBestiary<T>(
     getter: (creature: Creature | SRDMonster | null) => T
 ): T {
     const fromBase = getter(creature);
-    if (fromBase) return fromBase;
+    if (fromBase != null) return fromBase;
+    const original = "creature" in creature ? getter(creature.creature as Creature) : undefined;
+    if (original != null) return original;
     return getter(plugin.getCreatureFromBestiary(creature.name));
 }
 

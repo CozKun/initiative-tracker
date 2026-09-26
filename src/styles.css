@@ -46,3 +46,18 @@
 .coz-tracker-panel footer { justify-content:flex-end;margin-top:10px; }
 .coz-tracker-panel .panel-drag { cursor:move;touch-action:none; }
 .coz-tracker-panel input, .coz-tracker-panel select { max-width:100%; }
+
+/* Touch sizing is scoped to this plugin and its portalled controls. */
+@media (pointer: coarse) {
+    :is(.obsidian-initiative-tracker,.initiative-tracker.encounter-builder,.coz-tracker-panel,.coz-add-combatant,.quick-health,.coz-mini-colour-popover) :is(button,.clickable-icon,select,summary) {
+        min-height:44px; min-width:44px; touch-action:manipulation;
+    }
+    :is(.coz-tracker-panel,.coz-add-combatant,.quick-health,.coz-mini-colour-popover) input:not([type=checkbox]):not([type=range]):not([type=color]) { min-height:44px;font-size:16px; }
+    .coz-tracker-panel input[type=checkbox] { width:32px;height:32px; }
+    .coz-tracker-panel .target-choices label { min-height:44px; }
+    .obsidian-initiative-tracker :is(.health-container,.ac-container) { min-width:44px;height:44px; }
+    .obsidian-initiative-tracker input.initiative { min-width:44px;min-height:44px;font-size:16px; }
+    .obsidian-initiative-tracker .name { overflow-wrap:anywhere;word-break:normal; }
+}
+.coz-tracker-panel > * { flex-shrink:0; }
+.coz-tracker-panel footer { position:sticky;bottom:0;background:var(--background-primary);padding:8px 0;z-index:1; }

@@ -18,7 +18,7 @@
     const { state, ordered, dragEnabled, data } = tracker;
 
     $: items = [...$ordered].map((c) => {
-        return { creature: c, id: getId() };
+        return { creature: c, id: c.id };
     });
     $: showBaseColorColumn = $data?.showBaseColorColumn ?? true;
 
@@ -173,6 +173,7 @@
                     <CreatureTemplate
                         {creature}
                         {showBaseColorColumn}
+                        on:edit
                         on:open-combatant
                     />
                 </tr>

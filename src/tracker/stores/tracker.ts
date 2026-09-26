@@ -966,17 +966,11 @@ function createTracker() {
                         players.push(creature.level);
                         continue;
                     }
-                    const stats = {
-                        name: creature.name,
-                        display: creature.display,
-                        ac: creature.ac,
-                        hp: creature.hp,
-                        modifier: creature.modifier,
-                        xp: creature.xp,
-                        hidden: creature.hidden
-                    };
+                    // Group by inputs used by the difficulty calculators, not combat presentation.
                     const existing = [...creatureMap].find(([c]) =>
-                        equivalent(c, stats)
+                        c.name === creature.name && c.xp === creature.xp
+                        && c.cr === creature.cr && c.level === creature.level
+                        && JSON.stringify((c.creature as any)?.traits) === JSON.stringify((creature.creature as any)?.traits)
                     );
                     if (!existing) {
                         creatureMap.set(creature, 1);

@@ -33,6 +33,20 @@ This is an independently maintained fork, not an official release or endorsement
 
 The existing tracker, saved encounters, encounter blocks and integrations remain available. See the [changelog](CHANGELOG.md) for the full history. **13.0.23** is the first stable Community Edition release; its numbering continues the upstream version line.
 
+## Next release: beta validation
+
+The `13.0.24-beta.2` candidate adds group healing, movable effect/save panels, ad hoc allies and players, player-view colours, colour-independent shared initiative, and touch-oriented controls. It also extends difficulty bands to the six existing calculators: D&D 5e, D&D 5.5e, Lazy GM, CR2.0 Simple, Flee, Mortals! and Pathfinder 2e. These are encounter calculators, not complete combat rules automation.
+
+The stable download instructions below still describe **13.0.23**. The beta has a separate plugin identity and must not be enabled alongside stable. Updating beta means replacing only its three release files; preserve its `data.json`.
+
+**Validation boundary:** automated Chromium checks include touch emulation, narrow layouts and simulated software-keyboard viewport changes. Actual iOS/iPadOS and Android Obsidian testing is still required. Follow the [release UAT checklist](UAT-13.0.24.md) and report the device, OS, Obsidian version, theme, selected calculator and reproduction steps.
+
+Calculator limitations still under review before stable promotion:
+
+* PF2e uses the inherited rounded-average party level for mixed-level parties; creature XP is supported within four levels of that party level. Unsupported levels are marked unavailable. Simple hazards and variant rules are not newly certified by this beta.
+* Flee, Mortals! retains the inherited minion-group rounding and the plugin's estimated Extreme budget. Its published-book coverage, partial minion groups and custom statblock persistence require additional UAT.
+* CR2.0's decimal CR values now match the existing fractional entries. This fixes inconsistent inputs; it is not an independent certification of every inherited table value.
+
 ## Install manually
 
 Community Edition is distributed through **GitHub Releases**. It is **not listed in Obsidian's Community plugins directory**; installing the directory's original Initiative Tracker does not install this fork.

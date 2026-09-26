@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tracker } from "src/tracker/stores/tracker";
     import { tooltip, tooltipOptions } from "src/ui/tooltip";
     import type { SRDMonster } from "src/types/creatures";
     import { ExtraButtonComponent, setIcon } from "obsidian";
@@ -17,7 +18,8 @@
     const table = getContext<ReturnType<typeof createTable>>("table");
 
     export let creature: SRDMonster;
-    $: xp = table.xpFor(creature, $levels);
+    const { data } = tracker;
+    $: xp = ($data.rpgSystem, table.xpFor(creature, $levels));
     const add = (node: HTMLElement) => {
         new ExtraButtonComponent(node).setIcon("plus-with-circle").setTooltip("Add a copy to the encounter", tooltipOptions);
     };
@@ -62,11 +64,11 @@
         return stringify(source, 0, ", ", false);
     }
 
-    $: insignificant =
+    $: insignificant = $data.rpgSystem.startsWith("dnd5e") && $levels.length > 0 &&
         "cr" in creature &&
         creature.cr &&
         convertFraction(creature.cr) < $average - 3;
-    $: challenge =
+    $: challenge = $data.rpgSystem.startsWith("dnd5e") && $levels.length > 0 &&
         "cr" in creature &&
         creature.cr &&
         convertFraction(creature.cr) > $average + 3;

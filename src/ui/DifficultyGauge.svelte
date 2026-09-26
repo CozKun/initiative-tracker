@@ -2,7 +2,7 @@
     import { tooltip } from "src/ui/tooltip";
     import { tweened } from "svelte/motion";
     import { cubicOut } from "svelte/easing";
-    import { dnd55DifficultyScale, type DifficultyBand } from "src/utils/difficulty-scale";
+    import { dnd55DifficultyScale, systemDifficultyScale } from "src/utils/difficulty-scale";
     import type { DifficultyLevel, DifficultyThreshold } from "src/utils/rpg-system";
 
     export let difficulty: DifficultyLevel;
@@ -11,30 +11,33 @@
     export let system: string;
     export let formattedXp: string;
     export let detailed = false;
+    export let unit = "XP";
+    let showDetails = false;
     const difficultyBar = tweened(0, { duration: 400, easing: cubicOut });
-    $: banded = system === "dnd5e-55";
-    $: scale = banded ? dnd55DifficultyScale(difficulty.value, thresholds) : null;
-    $: maximum = thresholds[thresholds.length - 1]?.minValue ?? 0;
-    $: ready = banded ? scale !== null : maximum > 0;
-    $: difficultyBar.set(!ready ? 0 : banded ? scale.position / 100
-        : Math.max(0, Math.min(difficulty.value / maximum, 1)));
+    $: scale = !Number.isFinite(difficulty.value) ? null : system === "dnd5e-55"
+        ? dnd55DifficultyScale(difficulty.value, thresholds)
+        : systemDifficultyScale(difficulty.value, thresholds, system === 'dnd5e' ? 'Trivial' : labels[0]);
+    $: ready = scale !== null;
+    $: difficultyBar.set(ready ? scale.position / 100 : 0);
+    $: override = ready && difficulty.displayName !== scale.current.name;
     $: summary = ready ? difficulty.summary : "Add enabled party members with levels to calculate difficulty.";
-    function bandHelp(band: DifficultyBand) {
-        return band.max === null
-            ? `${band.name}: ${band.min.toLocaleString()} XP and above. High has no upper limit.`
-            : `${band.name}: ${band.min.toLocaleString()} to below ${band.max.toLocaleString()} XP.`;
+    function bandHelp(band: any) {
+        return band.max === null ? `${band.name}: ${band.exclusive ? 'above' : 'at least'} ${band.min.toLocaleString()} ${unit}. No upper limit.`
+            : `${band.name}: ${band.min.toLocaleString()} to ${band.maxExclusive === false ? 'at most' : 'below'} ${band.max.toLocaleString()} ${unit}.`;
     }
-    function bandRange(band: DifficultyBand) {
-        return band.max === null ? `${band.min.toLocaleString()}+ XP`
-            : `${band.min.toLocaleString()}–<${band.max.toLocaleString()} XP`;
+    function bandRange(band: any) {
+        const minimum = `${band.exclusive ? '>' : ''}${band.min.toLocaleString()}`;
+        return band.max === null ? `${minimum}${band.exclusive ? '' : '+'} ${unit}`
+            : `${minimum}–${band.maxExclusive === false ? '≤' : '<'}${band.max.toLocaleString()} ${unit}`;
     }
+    $: unavailable = Number.isFinite(difficulty.value) ? 'Add party levels' : 'Difficulty unavailable';
 </script>
 
-{#if banded}
     <div class="difficulty-bands-container">
         <div class="difficulty-caption">
-            <strong>{ready ? difficulty.displayName : "Add party levels"}</strong>
+            <strong>{ready ? difficulty.displayName : unavailable}</strong>
             <span>{formattedXp}</span>
+            <button type="button" class="difficulty-details-toggle" aria-expanded={showDetails} on:click={() => showDetails = !showDetails} aria-label="Calculation details">Details</button>
         </div>
         {#if ready}
             <div class="difficulty-bands" role="meter"
@@ -46,42 +49,27 @@
                 {/each}
                 <span class="difficulty-marker" style:left={`${$difficultyBar * 100}%`} aria-hidden="true" />
             </div>
-            <div class="difficulty-legend" class:detailed>
+            <div class="difficulty-legend" class:detailed style:grid-template-columns={`repeat(${scale?.bands.length ?? 4}, minmax(0, 1fr))`}>
                 {#each scale.bands as band}
-                    <span class="legend-item" class:current={detailed && scale.current.name === band.name} use:tooltip={bandHelp(band)}>
+                    <span class="legend-item" class:current={detailed && (difficulty.displayName === band.name || difficulty.displayName.startsWith(band.name + " ("))} use:tooltip={bandHelp(band)}>
                         <span class="legend-name"><i data-tier={band.name} aria-hidden="true" />{band.name}</span>
                         {#if detailed}<small>{bandRange(band)}</small>{/if}
                     </span>
                 {/each}
             </div>
-            {#if detailed}
+            {#if override}<p class="difficulty-override">{difficulty.displayName}. The bar shows the total budget; inspect Details for the additional rule.</p>{/if}
+            {#if detailed && !override}
             <div class="difficulty-distance">
-                <span class="next-bracket">{#if scale.next}<strong>{scale.next.add.toLocaleString()} XP</strong> to {scale.next.name}{:else}Highest bracket{/if}</span>
-                <span class="previous-bracket">{#if scale.previous}Remove <strong>{scale.previous.remove.toLocaleString()} XP</strong> for {scale.previous.name}{:else}Lowest bracket{/if}</span>
+                <span class="next-bracket">{#if scale.next}<strong>{("exclusive" in scale.next && scale.next.exclusive) ? "More than " : ""}{scale.next.add.toLocaleString()} {unit}</strong> to {scale.next.name}{:else}Highest bracket{/if}</span>
+                <span class="previous-bracket">{#if scale.previous}{#if 'remove' in scale.previous}Remove <strong>{scale.previous.remove.toLocaleString()} {unit}</strong>{:else}<strong>{scale.previous.inclusive ? 'At most' : 'Below'} {scale.previous.boundary.toLocaleString()} {unit}</strong>{/if} for {scale.previous.name}{:else}Lowest bracket{/if}</span>
             </div>
             {/if}
         {:else}
-            <div class="difficulty-empty" />
+            <div class="difficulty-empty" /><small>{Number.isFinite(difficulty.value) ? "Add enabled players with supported levels." : "Check creature and party levels: this calculator cannot evaluate one or more entries."}</small>
         {/if}
-    </div>
-{:else}
-<div class="difficulty-bar-container">
-    <span>{labels?.[0] ?? ""}</span>
-    <span
-        ><meter
-            class="difficulty-bar"
-            use:tooltip={{ text: summary, label: "Encounter difficulty" }}
-            min="0"
-            low="0.33"
-            high="0.66"
-            optimum="0"
-            value={$difficultyBar}
-        /></span
-    >
-    <span>{labels?.[labels.length - 1] ?? ""}</span>
-</div>
-{/if}
 
+        {#if showDetails}<pre class="difficulty-calculation">{ready ? difficulty.summary : 'Check enabled party levels and supported creature data.'}</pre>{/if}
+    </div>
 <style>
     .difficulty-bands-container { box-sizing: border-box; width: 100%; padding: 0 0.5rem; margin-bottom: 0.65rem; }
     .difficulty-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem;
@@ -90,7 +78,15 @@
     .difficulty-bands { display: flex; position: relative; width: 100%; height: 8px; border-radius: 4px; }
     .difficulty-band { display: block; border-right: 2px solid var(--background-primary); box-sizing: border-box; }
     .difficulty-band:first-child { border-radius: 4px 0 0 4px; }
-    .difficulty-band:nth-child(4) { border-radius: 0 4px 4px 0; border-right: 0; }
+    .difficulty-band:nth-last-child(2) { border-radius: 0 4px 4px 0; border-right: 0; }
+    .difficulty-band, :where(.difficulty-legend i) { background: var(--color-orange, #cf8c49); }
+    [data-tier="Easy"], [data-tier="Not Deadly"], [data-tier="Mild"] { background: var(--color-green, #60a96a); }
+    [data-tier="Medium"], [data-tier="Standard"], [data-tier="Bruising"], [data-tier="Bloody"] { background: var(--color-yellow, #d5a33b); }
+    [data-tier="Deadly"], [data-tier="Extreme"], [data-tier="Oppressive"] { background: var(--color-red, #d76868); }
+    .difficulty-details-toggle { padding:0 4px; height:auto; min-height:0; font-size:var(--font-ui-smaller); }
+    .difficulty-override { font-size:var(--font-ui-small);color:var(--text-normal); }
+    .difficulty-calculation { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; font-size:var(--font-ui-small); }
+    @media (max-width: 600px) { .difficulty-legend.detailed { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
     [data-tier="Trivial"] { background: var(--text-faint, #8b8b8b); }
     [data-tier="Low"] { background: var(--color-green, #60a96a); }
     [data-tier="Moderate"] { background: var(--color-yellow, #d5a33b); }
@@ -111,18 +107,4 @@
         color: var(--text-muted); font-size: var(--font-ui-smaller); }
     .difficulty-distance strong { color: var(--text-normal); font-weight: 500; }
     .difficulty-empty { height: 8px; border-radius: 4px; background: var(--background-modifier-border); }
-    .difficulty-bar-container {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        gap: 0.5rem;
-        align-items: center;
-        padding: 0 0.5rem;
-        margin-bottom: 0.5rem;
-        width: 100%;
-    }
-    .difficulty-bar {
-        width: 100%;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-    }
 </style>

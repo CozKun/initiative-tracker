@@ -96,7 +96,8 @@ export class Dnd5eFleeMortalsRpgSystem extends RpgSystem {
   }
 
   isMinion(creature: GenericCreature) {
-    return "traits" in creature && creature.traits?.find((trait: any) => trait.name === "Minion");
+    const traits = getFromCreatureOrBestiary(this.plugin, creature, c => c && "traits" in c ? c.traits : undefined);
+    return Array.isArray(traits) && traits.some((trait: any) => trait.name === "Minion");
   }
 
   getAveragePlayerLevel(playerLevels: number[]): number {
@@ -120,13 +121,14 @@ export class Dnd5eFleeMortalsRpgSystem extends RpgSystem {
       let cr = getFromCreatureOrBestiary(
         this.plugin,
         creature,
-        (c) => c?.cr ?? 0
+        (c) => c?.cr
       );
 
-      const crFraction = convertFraction(creature.cr);
+      const crFraction = convertFraction(cr);
 
       if (this.isMinion(creature)) {
-        const minionsPerStandard = MINION_CR_CONVERSION[cr].minionsPerStandard;
+        const minionsPerStandard = MINION_CR_CONVERSION[cr]?.minionsPerStandard;
+        if (!minionsPerStandard) { totalCreatureCr = NaN; return; }
         cr = crFraction * Math.floor(number / minionsPerStandard);
       } else {
         cr = crFraction * number;
@@ -145,13 +147,19 @@ export class Dnd5eFleeMortalsRpgSystem extends RpgSystem {
     }
   }
 
+  override usesGroupBudget(creature: GenericCreature): boolean { return this.isMinion(creature); }
+
+  override getGroupDifficulty(creature: GenericCreature, count: number, _?: number[]): number {
+    return this.getCreatureStatistics(new Map([[creature,count]])).totalCreatureCr;
+  }
+
   getCreatureDifficulty(creature: GenericCreature, _?: number[]): number {
     if (this.isMinion(creature)) return 0;
 
     const cr = getFromCreatureOrBestiary(
       this.plugin,
       creature,
-      (c) => c?.cr ?? "0"
+      (c) => c?.cr
     );
 
     return convertFraction(cr);
@@ -169,12 +177,12 @@ export class Dnd5eFleeMortalsRpgSystem extends RpgSystem {
     let displayName = thresholds
       .reverse() // Should now be in descending order
       .find((threshold) => totalCreatureCr >= threshold.minValue)
-      ?.displayName;
+      ?.displayName ?? "Trivial";
 
     let encounterPoints = DIFFICULY_CONVERSIONS[displayName].encounterPoints;
     let cssClass = DIFFICULY_CONVERSIONS[displayName].cssClass;
 
-    if (maxCreatureCr > crCap) {
+    if (Number.isFinite(totalCreatureCr) && maxCreatureCr > crCap) {
       displayName = "Extreme (Exceeds CR cap)"
       encounterPoints = DIFFICULY_CONVERSIONS["Extreme"].encounterPoints;
       cssClass = DIFFICULY_CONVERSIONS["Extreme"].cssClass;
@@ -248,6 +256,7 @@ ${thresholdSummary}`;
     return [
       {
         displayName: "Encounter Points per Day",
+        unit: "points",
         minValue: 8
       }
     ];

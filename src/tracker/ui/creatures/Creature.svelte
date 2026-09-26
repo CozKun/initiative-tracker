@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { showCreatureMenu } from "./creature-menu";
     import { DEFAULT_UNDEFINED, FRIENDLY, HIDDEN, INITIATIVE_TRACKER_VIEW } from "src/utils";
     import type { Creature } from "src/utils/creature";
     import BaseColorPicker from "./BaseColorPicker.svelte";
@@ -100,6 +101,7 @@
             <span class="name" class:ally={creature.friendly}>{name()}</span>
         {/if}
     </div>
+    <button type="button" class="creature-actions" aria-label={`Actions for ${name()}`} on:click|stopPropagation={(evt) => showCreatureMenu(creature, () => dispatch("edit", creature), evt)}>•••</button>
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div class="statuses" on:click={(e) => e.stopPropagation()}>
         {#if statuses.size}
@@ -158,6 +160,7 @@
 </td>
 
 <style scoped>
+    .creature-actions { padding:0 6px; height:24px; background:transparent;box-shadow:none; }
     .ally { font-weight: 700; }
     .health-selected { outline: 2px solid var(--interactive-accent); outline-offset: -2px; border-radius: var(--radius-s); }
     .name-holder {
@@ -208,6 +211,6 @@
         font-weight: var(--font-bold);
     }
     .mobile {
-        font-size: smaller;
+        font-size: var(--font-ui-small);
     }
 </style>

@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
+import { runCommunityChecks } from "./community-checks.mjs";
 import { runNextBuildChecks } from "./next-build-checks.mjs";
 import { runBuilderChecks } from "./builder-checks.mjs";
 
@@ -21,7 +22,7 @@ await build({
     } }, sveltePlugin({ preprocess: sveltePreprocess(), compilerOptions: { css: "injected" }, filterWarnings: () => false })]
 });
 const styles = await readFile(path.join(root, "styles.css"), "utf8");
-const html = `<!doctype html><meta charset="utf-8"><style>
+const html = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>
 :root { --background-primary:#202126; --background-secondary:#292b32; --text-normal:#e5e6ec; --text-muted:#a3a7b4;
 --background-modifier-border:#454956; --interactive-accent:#8e7ddb; --text-on-accent:white; --radius-m:8px; --radius-s:4px;
 --font-ui-small:13px; --font-ui-smaller:12px; --font-monospace:monospace; --shadow-s:0 6px 22px #0008; }
@@ -229,11 +230,12 @@ try {
     await page.locator('.difficulty-bands-container').screenshot({path:path.join(out,'difficulty-bands-light.png')});
     await page.locator('.initiatie-tracker-metadata').screenshot({path:path.join(out,'tracker-header-light.png')});
     await page.evaluate(() => fixture.setDifficultyScenario([5,5,5,5],500,'dnd5e'));
-    assert.equal(await page.locator('meter.difficulty-bar').count(),1);
-    assert.equal(await page.locator('.difficulty-bands').count(),0);
-    check("other RPG systems keep their existing meter");
+    assert.equal(await page.locator('meter.difficulty-bar').count(),0);
+    assert.equal(await page.locator('.difficulty-bands').count(),1);
+    check("D&D 5e uses system-specific bands");
     await runBuilderChecks(page, `http://127.0.0.1:${server.address().port}`, out, check);
     await runNextBuildChecks(page, `http://127.0.0.1:${server.address().port}`, out, check);
+    await runCommunityChecks(page, browser, `http://127.0.0.1:${server.address().port}`, out, check);
     assert.deepEqual(errors,[]); check("no browser runtime errors");
     console.log(`${checks} beta interaction checks passed. Screenshots: ${out}`);
 } catch (error) {

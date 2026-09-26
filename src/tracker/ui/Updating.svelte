@@ -56,7 +56,7 @@
         </div>
     {/if}
     {#if $updateTarget === 'hp'}
-        <nav class="effect-modes" aria-label="Effect type">{#each [['damage','Damage'],['heal','Heal'],['temp','Temp HP'],['max','Max HP'],['conditions','Conditions']] as [value,label]}
+        <nav class="effect-modes" use:accessibleName={"Effect type"}>{#each [['damage','Damage'],['heal','Heal'],['temp','Temp HP'],['max','Max HP'],['conditions','Conditions']] as [value,label]}
             <button type="button" aria-pressed={mode === value} on:click={() => setMode(value)}>{label}</button>{/each}</nav>
         <div class="updating-hp">
             {#if mode !== 'conditions'}
@@ -78,17 +78,17 @@
     <div class="target-table-scroll"><table class="updating-creature-table"><thead><tr><th>Name / statblock</th>
         {#if $updateTarget === 'hp'}<th>Saved</th><th>Resist</th><th title={multiplierHelp}>Multiplier (×)</th>{#if mode === 'heal' && perTarget}<th>Heal HP</th>{/if}{/if}<th></th></tr></thead>
         <tbody>{#each [...$updating.entries()] as [creature, update]}<tr>
-            <td><button class="target-name" type="button" on:click={(e) => plugin.openCombatant(creature, e.ctrlKey || e.metaKey)}>
+            <td class="target-title"><button class="target-name" type="button" on:click={(e) => plugin.openCombatant(creature, e.ctrlKey || e.metaKey)}>
                 {#if creature.baseColor}<span class="target-colour" style:background-color={creature.baseColor} />{/if}{creature.getName()}</button></td>
             {#if $updateTarget === 'hp'}
-                <td><input type="checkbox" aria-label={`Saved: ${creature.getName()}`} bind:checked={update.saved} disabled={mode !== 'damage' && mode !== 'conditions'} /></td>
-                <td><input type="checkbox" aria-label={`Resist: ${creature.getName()}`} bind:checked={update.resist} disabled={mode !== 'damage'} /></td>
-                <td><input type="number" min="0" step="any" title={multiplierHelp} aria-label={`HP multiplier for ${creature.getName()}`} value={update.customMod} disabled={mode === 'temp' || mode === 'conditions'}
+                <td data-field="Saved"><input type="checkbox" aria-label={`Saved: ${creature.getName()}`} bind:checked={update.saved} disabled={mode !== 'damage' && mode !== 'conditions'} /></td>
+                <td data-field="Resist"><input type="checkbox" aria-label={`Resist: ${creature.getName()}`} bind:checked={update.resist} disabled={mode !== 'damage'} /></td>
+                <td data-field="Multiplier"><input type="number" min="0" step="any" title={multiplierHelp} aria-label={`HP multiplier for ${creature.getName()}`} value={update.customMod} disabled={mode === 'temp' || mode === 'conditions'}
                     on:input={(e) => { update.customMod = e.currentTarget.value; $updating = $updating; }}
                     on:keydown={(e) => { if(e.key === 'Escape') { e.stopPropagation(); update.customMod = '1'; $updating = $updating; } }} /></td>
-                {#if mode === 'heal' && perTarget}<td><input type="text" inputmode="decimal" aria-label={`Healing for ${creature.getName()}`} placeholder={damage || '0'} bind:value={update.amount} /></td>{/if}
+                {#if mode === 'heal' && perTarget}<td data-field="Heal HP"><input type="text" inputmode="decimal" aria-label={`Healing for ${creature.getName()}`} placeholder={damage || '0'} bind:value={update.amount} /></td>{/if}
             {/if}
-            <td><button type="button" aria-label={`Remove target ${creature.getName()}`} on:click={() => tracker.setUpdate(creature)}>×</button></td>
+            <td class="target-remove"><button type="button" aria-label={`Remove target ${creature.getName()}`} on:click={() => tracker.setUpdate(creature)}>×</button></td>
         </tr>{/each}</tbody></table></div>
     <small class="multiplier-help">Multiplier: 1 normal · 2 double · 0.5 half · 0 no HP change. Saved and Resist affect damage; Saved also skips applying conditions.</small>
     {#if invalidMultiplier || invalidAmount || invalidOverrides}<p role="alert">Enter a valid amount and a multiplier of 0 or more for every target.</p>{/if}
@@ -106,4 +106,16 @@
 :is(th,td) { padding:6px 4px;text-align:center; } :is(th,td):first-child { text-align:left; }
 td input[type=number],td input[type=text] { width:64px; } .target-name { display:flex;align-items:center;gap:5px;text-align:left;white-space:normal; }
 .target-colour { width:10px;height:10px;border-radius:50%;flex-shrink:0; } small { color:var(--text-muted);line-height:1.45; }
+@media (max-width:600px), (pointer:coarse) {
+    .target-table-scroll { overflow:visible; }
+    table,tbody { display:block; }
+    thead { display:none; }
+    tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:10px; margin-bottom:8px; border:1px solid var(--background-modifier-border);border-radius:8px; }
+    td { display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0;min-width:0; }
+    td[data-field]::before { content:attr(data-field);font-size:var(--font-ui-small); }
+    .target-title { grid-column:1 / -1; } .target-title button { width:100%; }
+    .target-remove { justify-content:flex-end; }
+    .input-status { flex-wrap:wrap; }
+    .effect-heading { flex-wrap:wrap; }
+}
 </style>

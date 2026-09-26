@@ -29,9 +29,10 @@ const PLAYER_POWER_BY_LEVEL: Record<number, number> = {
 const POWER_BY_CR: Record<string, number> = {
     "0": 1,
     "1/8": 5,
-    "0.25": 5,
+    "0.125": 5,
+    "0.25": 10,
     "1/4": 10,
-    "0.5": 10,
+    "0.5": 16,
     "1/2": 16,
     "1": 22,
     "2": 28,
@@ -93,7 +94,7 @@ export class Dnd5eCr2SimpleRpgSystem extends RpgSystem {
   }
 
   getCreatureDifficulty(creature: GenericCreature, _?: number[]): number {
-    const cr = getFromCreatureOrBestiary(this.plugin, creature, c => c?.cr ?? "0");
+    const cr = getFromCreatureOrBestiary(this.plugin, creature, c => c?.cr);
     return POWER_BY_CR[cr] ?? 0;
   }
 
@@ -102,7 +103,7 @@ export class Dnd5eCr2SimpleRpgSystem extends RpgSystem {
       _?: number[]
   ): string[] {
       const cr = getFromCreatureOrBestiary(
-          this.plugin, creature, c => c?.cr ?? 0);
+          this.plugin, creature, c => c?.cr);
       return [`${crToString(cr)} CR`];
   }
 

@@ -69,6 +69,7 @@ export class Menu {
         callback(item); this.items.push(item); return this;
     }
     addSeparator() { return this; }
+    showAtPosition() { (window as any).lastMenu = this.items; }
     showAtMouseEvent() { (window as any).lastMenu = this.items; }
 }
 export class ExtraButtonComponent {

@@ -13,7 +13,7 @@
     import QuickHealth from "../src/tracker/ui/QuickHealth.svelte";
     import Updating from "../src/tracker/ui/Updating.svelte";
     import Metadata from "../src/tracker/ui/Metadata.svelte";
-    import { dnd55DifficultyScale } from "../src/utils/difficulty-scale";
+    import { dnd55DifficultyScale, systemDifficultyScale } from "../src/utils/difficulty-scale";
     import { getRpgSystem } from "../src/utils/rpg-system";
     import { showCreatureMenu } from "../src/tracker/ui/creatures/creature-menu";
     import BuilderEncounter from "../src/builder/view/encounter/Encounter.svelte";
@@ -66,7 +66,7 @@
         showDifficulty = true;
     };
     (window as any).fixture = { tracker, first, second, plugin, log, get, recentColours,
-        dnd55DifficultyScale, getRpgSystem, setDifficultyScenario, Creature, sharesInitiative };
+        dnd55DifficultyScale, systemDifficultyScale, getRpgSystem, setDifficultyScenario, Creature, sharesInitiative };
     const builderMode = new URLSearchParams(location.search).has("builder");
     const catalogueGoblin = { name: "Goblin", hp: 30, ac: 14, cr: "1/4", xp: 50 };
     if (builderMode) {

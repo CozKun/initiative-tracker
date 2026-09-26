@@ -43,3 +43,11 @@ Append new observations here before deciding the next build's scope.
 - [ ] Validate the refreshed controls in live Obsidian and during table play.
 - [ ] Confirm the Escape encounter rolls matching coloured copies together.
 - [ ] Promote to stable only after beta acceptance.
+
+## Community compatibility — beta.2
+
+- [x] System-specific difficulty bands and tap-accessible calculation details for all six calculators.
+- [x] Fix stale builder calculators, inconsistent fractional CR and targeted budget/zero-value defects.
+- [x] Touch action menu, responsive effect targets and keyboard-aware panel bounds.
+- [x] Add automated cross-system and touch regression coverage.
+- [ ] Complete the physical-device and remaining rules/integration gates in UAT-13.0.24.md before public release.

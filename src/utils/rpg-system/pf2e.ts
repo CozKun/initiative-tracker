@@ -83,23 +83,24 @@ export class Pathfinder2eRpgSystem extends RpgSystem {
             ?.toString()
             .split(" ")
             .slice(-1);
-        if (lvl == null || lvl == undefined) return 0;
+        if (lvl == null || !playerLevels?.length) return NaN;
         const partyLvl = Math.round(
-            playerLevels?.length ?? 0 > 0
+            (playerLevels?.length ?? 0) > 0
                 ? playerLevels.reduce((a, b) => a + b) / playerLevels.length
                 : 0
         );
 
         const creature_differences = String(lvl - partyLvl);
 
-        return XP_CREATURE_DIFFERENCES[creature_differences] ?? 0;
+        return XP_CREATURE_DIFFERENCES[creature_differences] ?? NaN;
     }
 
     getDifficultyThresholds(playerLevels: number[]): DifficultyThreshold[] {
         const budget = playerLevels.length * 20;
         const encounterBudget: Record<string, number> = {
             trivial: Math.floor(budget * 0.5),
-            low: Math.floor(budget * 0.75),
+            // GM Core: Low adjusts by 20 XP per character, not 15.
+            low: Math.max(0, 60 + (playerLevels.length - 4) * 20),
             moderate: budget,
             severe: Math.floor(budget * 1.5),
             extreme: Math.floor(budget * 2)
@@ -146,7 +147,7 @@ export class Pathfinder2eRpgSystem extends RpgSystem {
                 "trivial",
             value: creatureXp,
             title: "Total XP",
-            intermediateValues: [{ label: "Total XP", value: creatureXp }]
+            intermediateValues: Number.isFinite(creatureXp) ? [{ label: "Total XP", value: creatureXp }] : []
         };
     }
 }

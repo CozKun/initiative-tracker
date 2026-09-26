@@ -10,4 +10,4 @@
 </script>
 
 <DifficultyGauge difficulty={$dif.difficulty} thresholds={$dif.thresholds} labels={$dif.labels}
-    system={$data.rpgSystem} formattedXp={getRpgSystem(plugin).formatDifficultyValue($dif.difficulty.value, true)} />
+    system={$data.rpgSystem} unit={getRpgSystem(plugin, $data.rpgSystem).valueUnit} formattedXp={getRpgSystem(plugin).formatDifficultyValue($dif.difficulty.value, true)} />

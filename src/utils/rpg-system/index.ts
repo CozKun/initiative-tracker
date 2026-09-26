@@ -49,7 +49,9 @@ export type DifficultyThreshold = {
   /** The display name for the budget item, eg "Trivial" */
   displayName: string,
   /** The minimum value required to meet this difficulty threshold. */
-  minValue: number
+  minValue: number;
+  exclusive?: boolean;
+  unit?: string;
 }
 
 export type IntermediateValues = { label: string, value: number }[]

@@ -28,7 +28,7 @@ export class Dnd5eLazyGmRpgSystem extends RpgSystem {
 
     getCreatureDifficulty(creature: GenericCreature, _?: number[]): number {
         return convertFraction(
-            getFromCreatureOrBestiary(this.plugin, creature, (c) => c?.cr ?? 0)
+            getFromCreatureOrBestiary(this.plugin, creature, (c) => c?.cr)
         );
     }
 
@@ -47,7 +47,8 @@ export class Dnd5eLazyGmRpgSystem extends RpgSystem {
         return [
             {
                 displayName: "Deadly",
-                minValue: totalLevels / (avgLevel > 4 ? 2 : 4)
+                minValue: totalLevels / (avgLevel > 4 ? 2 : 4),
+                exclusive: true
             }
         ];
     }
@@ -62,7 +63,7 @@ export class Dnd5eLazyGmRpgSystem extends RpgSystem {
             0
         );
         const deadlyThreshold =
-            this.getDifficultyThresholds(playerLevels).first()?.minValue ?? 0;
+            this.getDifficultyThresholds(playerLevels)[0]?.minValue ?? 0;
         const displayName = crSum > deadlyThreshold ? "Deadly" : "Not Deadly";
         const xp = [...creatures].reduce(
             (acc, [creature, count]) =>
@@ -88,7 +89,7 @@ Deadly Threshold: ${deadlyThreshold}`;
     }
 
     formatDifficultyValue(value: number, withUnits?: boolean): string {
-        if (!value) return DEFAULT_UNDEFINED;
+        if (!Number.isFinite(value)) return DEFAULT_UNDEFINED;
         return crToString(value) + (withUnits ? " CR" : "");
     }
 }

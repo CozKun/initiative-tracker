@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.24-beta.2 — 2026-09-26 (beta only)
+
+* Added labelled difficulty bands, system-specific units and tap-accessible calculation details for all six calculators. Strict Lazy GM boundaries and Flee, Mortals! CR-cap overrides remain explicit; the tracker stays compact.
+* Builder calculator, creature values and warnings now refresh when changing systems. D&D CR warnings no longer appear in Pathfinder mode.
+* Fixed CR2.0 decimal/fractional CR inconsistencies, zero XP/level fallback, Pathfinder 2e Low-budget party adjustments and unsupported PF2e relative levels silently contributing zero XP.
+* Kept minion group calculations consistent between builder and tracker, independent of colour or combat presentation. Unsupported minion CR data no longer crashes the calculator. Encounter points are labelled as points rather than CR.
+* Added a tap-accessible creature action menu, larger touch controls, responsive effect target cards and visible-viewport positioning for effect/save panels, quick HP and colour pickers. Focused effect inputs stay above the sticky action footer when the keyboard reduces the viewport.
+* Retained stable creature row identities while updating the tracker, avoiding unnecessary row replacement.
+* Passed 54 automated browser checks, including cross-system regression fixtures, threshold checks, touch emulation and keyboard-viewport simulation; added a public-release UAT checklist. Real iOS/Android Obsidian acceptance remains pending; this beta is not a public stable release.
+
 ### 13.0.24-beta.1 — 2026-09-26 (beta only)
 
 * Save encounters in a movable naming panel, with confirmation before overwriting an existing encounter.

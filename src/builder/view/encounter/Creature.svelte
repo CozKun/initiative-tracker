@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tracker } from "src/tracker/stores/tracker";
     import { tooltip, accessibleName } from "src/ui/tooltip";
     import { setIcon } from "obsidian";
     import { convertFraction, FRIENDLY, getRpgSystem, HIDDEN } from "src/utils";
@@ -11,13 +12,15 @@
     const { players } = encounter;
     const { average, levels } = players;
     const plugin = getContext("plugin");
-    const rpgSystem = getRpgSystem(plugin);
+    const { data } = tracker;
+    $: rpgSystem = getRpgSystem(plugin, $data.rpgSystem);
     export let count: number;
     export let creature: EncounterCreature;
     $: colours = copyColours(creature, count);
     $: perCreature = rpgSystem.getCreatureDifficulty(creature, $levels);
-    $: insignificant = $levels.length > 0 && "cr" in creature && creature.cr != null && convertFraction(creature.cr) < $average - 3;
-    $: challenge = $levels.length > 0 && "cr" in creature && creature.cr != null && convertFraction(creature.cr) > $average + 3;
+    $: groupDifficulty = rpgSystem.getGroupDifficulty(creature, count, $levels);
+    $: insignificant = $data.rpgSystem.startsWith("dnd5e") && $levels.length > 0 && "cr" in creature && creature.cr != null && convertFraction(creature.cr) < $average - 3;
+    $: challenge = $data.rpgSystem.startsWith("dnd5e") && $levels.length > 0 && "cr" in creature && creature.cr != null && convertFraction(creature.cr) > $average + 3;
     const icon = (node: HTMLElement, name: string) => { setIcon(node, name); return { update: (next: string) => setIcon(node, next) }; };
     const open = (event: MouseEvent) => plugin.openCombatant(CreatureCreator.from(creature), event.ctrlKey || event.metaKey);
     const toggle = (field: "friendly" | "hidden") => { creature[field] = !creature[field]; encounter.update(creature); };
@@ -50,12 +53,12 @@
         </div>
         <span class="stats" use:tooltip={"Difficulty value per creature, before any encounter adjustments."}>
             {#each rpgSystem.getAdditionalCreatureDifficultyStats(creature, $levels) as stat}<span>{stat}</span>{/each}
-            <span>{rpgSystem.formatDifficultyValue(perCreature, true)} each</span>
+            <span>{#if rpgSystem.usesGroupBudget(creature)}Minion group budget{:else}{rpgSystem.formatDifficultyValue(perCreature, true)} each{/if}</span>
             <span aria-hidden="true">·</span>
             <strong class="group-total" use:tooltip={creature.friendly
                 ? "Total for this group before encounter adjustments. Allies are excluded from encounter difficulty."
-                : "Per-creature value multiplied by the number of copies, before encounter adjustments."}>
-                {rpgSystem.formatDifficultyValue(perCreature * count, true)} total
+                : "Group difficulty value, including system-specific group rules, before encounter-wide adjustments."}>
+                {rpgSystem.formatDifficultyValue(groupDifficulty, true)} total
             </strong>
         </span>
         {#if creature.hidden}<span class="flag">Hidden</span>{/if}

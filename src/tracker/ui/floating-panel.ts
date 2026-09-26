@@ -1,3 +1,4 @@
+import { visibleViewport } from "./viewport";
 /** Non-modal panel: remains open while the user opens statblocks elsewhere. */
 export function floatingPanel(node: HTMLElement) {
     const doc = node.ownerDocument;
@@ -6,11 +7,19 @@ export function floatingPanel(node: HTMLElement) {
     doc.body.appendChild(node);
     let left: number, top = 64;
     const constrain = () => {
-        node.style.maxWidth = `${Math.max(0, win.innerWidth - 16)}px`;
-        node.style.maxHeight = `${Math.max(0, win.innerHeight - 16)}px`;
-        left = Math.max(8, Math.min(left ?? win.innerWidth - node.offsetWidth - 16, win.innerWidth - node.offsetWidth - 8));
-        top = Math.max(8, Math.min(top, win.innerHeight - node.offsetHeight - 8));
+        const viewport = visibleViewport(win);
+        node.style.maxWidth = `${Math.max(0, viewport.width - 16)}px`;
+        node.style.maxHeight = `${Math.max(0, viewport.height - 16)}px`;
+        left = Math.max(viewport.left + 8, Math.min(left ?? viewport.right - node.offsetWidth - 16, viewport.right - node.offsetWidth - 8));
+        top = Math.max(viewport.top + 8, Math.min(top, viewport.bottom - node.offsetHeight - 8));
         node.style.left = `${left}px`; node.style.top = `${top}px`;
+        const focused = doc.activeElement as HTMLElement;
+        if (node.contains(focused) && focused.matches('input,select,textarea')) {
+            const field = focused.getBoundingClientRect();
+            const bottom = node.getBoundingClientRect().bottom - (node.querySelector<HTMLElement>('footer')?.offsetHeight ?? 0) - 24;
+            if (field.bottom > bottom) node.scrollTop += field.bottom-bottom;
+            else if (field.top < top+8) node.scrollTop -= top+8-field.top;
+        }
     };
     let drag: { x: number; y: number } | null = null;
     const down = (e: PointerEvent) => {
