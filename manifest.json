@@ -1,10 +1,10 @@
 {
     "id": "coz-initiative-tracker",
     "name": "Initiative Tracker Community Edition",
-    "version": "13.0.23",
+    "version": "13.0.24",
     "minAppVersion": "1.7.2",
-    "author": "CozKun (Community Edition), Jeremy Valentine (original author)",
-    "description": "Track tabletop combat and build encounters, with quick HP controls, Mini Colour Indicators and D&D 5.5e difficulty bands.",
-    "authorUrl": "https://github.com/CozKun/initiative-tracker",
+    "author": "Coz",
+    "description": "Run tabletop combat and build encounters with touch-friendly HP and initiative controls, party management, and Mini Colour Indicators.",
+    "authorUrl": "https://github.com/CozKun",
     "isDesktopOnly": false
 }

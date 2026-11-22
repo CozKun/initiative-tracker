@@ -1,6 +1,6 @@
 {
     "name": "coz-initiative-tracker",
-    "version": "13.0.23",
+    "version": "13.0.24",
     "description": "Community Edition of Initiative Tracker for Obsidian, focused on in-person tabletop play.",
     "types": "./dist/index.d.ts",
     "scripts": {
@@ -11,7 +11,7 @@
         "dev": "node esbuild.config.mjs"
     },
     "keywords": [],
-    "author": "CozKun (Community Edition), Jeremy Valentine (original author)",
+    "author": "Coz",
     "license": "GPL-3.0-only",
     "devDependencies": {
         "@codemirror/commands": "^6.2.5",

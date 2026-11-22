@@ -3,8 +3,8 @@
     "name": "Coz Initiative Tracker Beta",
     "version": "13.0.24-beta.6",
     "minAppVersion": "1.7.2",
-    "author": "Jeremy Valentine",
-    "description": "TTRPG Initiative Tracker for Obsidian.md",
-    "authorUrl": "https://github.com/valentine195/obsidian-initiative-tracker",
+    "author": "Coz",
+    "description": "Beta of Initiative Tracker Community Edition for tabletop combat and encounter building.",
+    "authorUrl": "https://github.com/CozKun",
     "isDesktopOnly": false
 }

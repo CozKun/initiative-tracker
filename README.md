@@ -18,42 +18,39 @@ This is an independently maintained fork, not an official release or endorsement
 
 ### Faster combat at the table
 
-* **Quick Damage/Heal:** click HP, enter an amount and press Enter. Escape or an outside click cancels. Clicking another creature's HP switches the target, making a misclick easy to correct.
-* **Separate effects:** saving throws, resistance, conditions, temporary/max HP and multipliers remain available through **Apply effect…**, **Add targets** and the creature's context menu.
+* **Quick Damage/Heal:** select a creature's HP and enter an amount. Desktop supports Enter and Escape. Touch screens have an in-app number pad for HP, initiative, AC, and other tracker numbers. Selecting another creature's HP switches the target.
+* **Apply Effect:** handle group damage and healing, saving throws, resistance, conditions, temporary or maximum HP, and multipliers. Check statblocks inside the panel and return to your draft.
 * **Mini Colour Indicators:** identify individual creatures using bases, rings, tokens or other coloured markers. The picker remembers your last eight colours and includes **No colour**.
-* **Compact tracker layout:** a drag-order lock, flexible name column and compact difficulty display keep useful information close at hand. Right-click a creature for its additional actions.
+* **Compact tracker layout:** a drag-order lock, flexible name column and compact difficulty display keep useful information close at hand. Right-click a creature on desktop, or focus its name and press Shift+F10. Tap the dots beside the name on a touch screen.
+* **Saved encounters:** use the same searchable Save and Load library in the tracker and builder. Wait for your vault sync to finish before resuming an encounter on another device.
 
 ### Clearer encounter planning
 
-* **D&D 5.5e difficulty:** Trivial, Low, Moderate and High bands use the revised party thresholds and enemy XP without a creature-count multiplier. The builder shows bracket ranges and the XP needed to move into the next or previous bracket; the tracker stays compact.
+* **Difficulty bands:** the builder shows ranges and the amount needed to reach a neighbouring bracket. The tracker keeps a compact view. Each calculator uses its own budgets and units.
 * **Individual copies within groups:** multiple creatures appear as nested copies, each with its own colour and remove control. Colours survive saving, loading, copying encounter blocks and starting the tracker.
 * **Visible XP:** a sortable bestiary XP column, XP per creature and group totals make encounters easier to compare.
-* **Refreshed party controls:** include or exclude named characters, manage groups by player count and level, and choose saved parties. The panel remembers whether you left it expanded.
+* **Refreshed party controls:** choose a saved party, include or exclude named characters, and add groups for planning. Choose whether an unnamed group should also create temporary players in the tracker.
 * **Consistent headings and tooltips:** explanatory help stays on relevant controls, with styling that follows the active theme.
 
-The existing tracker, saved encounters, encounter blocks and integrations remain available. See the [changelog](CHANGELOG.md) for the full history. **13.0.23** is the first stable Community Edition release; its numbering continues the upstream version line.
+See the [changelog](CHANGELOG.md) for the full history. Release numbering continues the upstream version line.
 
-## Next release: beta validation
+## Device and calculator coverage
 
-The `13.0.24-beta.2` candidate adds group healing, movable effect/save panels, ad hoc allies and players, player-view colours, colour-independent shared initiative, and touch-oriented controls. It also extends difficulty bands to the six existing calculators: D&D 5e, D&D 5.5e, Lazy GM, CR2.0 Simple, Flee, Mortals! and Pathfinder 2e. These are encounter calculators, not complete combat rules automation.
+The 13.0.24 beta passed targeted checks in desktop Obsidian and on an Android tablet. Automated checks exercise narrow layouts, touch controls and keyboard viewport changes. Native iOS and iPadOS coverage is still open.
 
-The stable download instructions below still describe **13.0.23**. The beta has a separate plugin identity and must not be enabled alongside stable. Updating beta means replacing only its three release files; preserve its `data.json`.
+Supported encounter calculators are D&D 5e, D&D 5.5e, Lazy GM, CR2.0 Simple, Flee, Mortals! and Pathfinder 2e. Combat rules are adjudicated at the table.
 
-**Validation boundary:** automated Chromium checks include touch emulation, narrow layouts and simulated software-keyboard viewport changes. Actual iOS/iPadOS and Android Obsidian testing is still required. Follow the [release UAT checklist](UAT-13.0.24.md) and report the device, OS, Obsidian version, theme, selected calculator and reproduction steps.
-
-Calculator limitations still under review before stable promotion:
-
-* PF2e uses the inherited rounded-average party level for mixed-level parties; creature XP is supported within four levels of that party level. Unsupported levels are marked unavailable. Simple hazards and variant rules are not newly certified by this beta.
-* Flee, Mortals! retains the inherited minion-group rounding and the plugin's estimated Extreme budget. Its published-book coverage, partial minion groups and custom statblock persistence require additional UAT.
-* CR2.0's decimal CR values now match the existing fractional entries. This fixes inconsistent inputs; it is not an independent certification of every inherited table value.
+* PF2e uses the rounded average for mixed-level parties and supports creature XP within four levels of that party level. Hazards and variant rules remain outside the verified cases for this release.
+* Flee, Mortals! retains the existing minion-group rounding and estimated Extreme budget. Partial minion groups and custom statblock persistence need more coverage.
+* CR2.0 decimal CR values now match their fractional equivalents. Testing covers selected table values and boundaries.
 
 ## Install manually
 
 Community Edition is distributed through **GitHub Releases**. It is **not listed in Obsidian's Community plugins directory**; installing the directory's original Initiative Tracker does not install this fork.
 
-Requires **Obsidian 1.7.2 or newer**. This release has been tested on desktop; the new controls have not been validated on mobile, and some creature actions use right-click.
+Requires **Obsidian 1.7.2 or newer**.
 
-1. Download **`coz-initiative-tracker-13.0.23.zip`** from the [latest release](https://github.com/CozKun/initiative-tracker/releases/latest). Choose the named plugin ZIP, not GitHub's automatic **Source code** archives.
+1. Download **`coz-initiative-tracker-13.0.24.zip`** from [Community Edition releases](https://github.com/CozKun/initiative-tracker/releases). Use the named plugin ZIP.
 2. Close Obsidian. Open your vault's `.obsidian/plugins/` folder; create `plugins` if necessary. Your file manager may hide `.obsidian`.
 3. Extract the ZIP into `plugins`. The final layout must contain:
 
@@ -83,9 +80,9 @@ To carry beta settings and encounters over, back up both plugin folders, close O
 
 ## Getting started
 
-Open the encounter builder, configure your party, add creatures and assign colours to individual copies. Start the encounter when ready. In the tracker, click HP for quick damage or healing; right-click a creature for additional actions.
+Open the encounter builder, configure your party, add creatures and assign colours to individual copies. Start the encounter when ready. In the tracker, select HP for quick damage or healing. Open creature actions with right-click on desktop or the dots on a touch screen.
 
-Select **D&D 5.5e** in the plugin's RPG system setting for the new difficulty bands. Other supported systems keep their own calculations.
+Choose an RPG system in the plugin settings to use that calculator's difficulty bands and units.
 
 You can also launch encounters from a note:
 
