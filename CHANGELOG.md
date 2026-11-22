@@ -6,12 +6,57 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### 13.0.24
 
-* **Encounter difficulty across systems:** The builder and tracker use labelled bands and calculator-specific units for D&D 5e, D&D 5.5e (2024), Lazy GM, CR2.0 Simple, Flee, Mortals! and Pathfinder 2e. The builder shows how far the encounter is from each neighbouring bracket. Fixes include Pathfinder 2e's Low budget adjustment for party size, CR2.0 fractional CR lookups, and Flee, Mortals! creature CR-cap reporting.
-* **Touch controls:** Quick HP, initiative, AC adjustments, effect values and combatant stats use a shared keypad on touch devices. Creature actions sit beside the name on touch, and desktop users can open them by right-click or Shift+F10. Long names wrap and stay left aligned.
-* **Apply Effect:** Group healing supports individual amounts. Browse standard conditions and open or switch target statblocks inside the panel while keeping your draft. The statblock pane's close button now closes the pane.
-* **Saved encounters:** Tracker and builder share a searchable library, with overwrite and deletion confirmation. The Save window opens centrally on desktop and higher on touch screens. The tracker reads incoming saved encounters while Obsidian is open and preserves changes to different encounters when saving.
-* **Party and initiative:** The builder carries its chosen roster and colours into the tracker. Excluded players stay out, and planning groups create temporary players only when selected. Shared initiative keeps coloured copies on the same roll while keeping individual rows. Switching the tracker party preserves the combat state of players who remain, and manual initiative accepts zero.
-* **Table play:** Add enemies, allies and players directly to an encounter. Player View shows Mini Colour Indicators. The optional Unconscious recovery setting clears the tracker-applied condition when a creature heals from zero HP.
+13.0.24 makes it easier to plan an encounter on one device and run it at the table on another. It brings a touch keypad, a rebuilt Apply Effect panel, a shared encounter library and clearer difficulty calculations across six rulesets and variants.
+
+#### Run combat from the tracker
+
+Handle a spell that hits several creatures, look up their saves and finish applying the effect from the same panel.
+
+* **Apply Effect** has dedicated modes for damage, healing, temporary HP, maximum HP and conditions. Group healing can use one amount or an individual amount for each target. Damage keeps per-target saves, resistance and multipliers.
+* Select a target name to open its statblock inside Apply Effect. Switch targets or return to your draft with your choices intact. The separate creature pane's close button now closes the pane itself.
+* **Add combatant** can search the bestiary and saved players or take manual stats. Add enemies, allies or players during combat and roll or enter their initiative while keeping the current turn.
+* An optional setting removes tracker-applied **Unconscious** when actual HP rises above zero. Manually applied conditions stay in place.
+
+#### Carry the right party into combat
+
+The roster you choose in the builder now carries through to the tracker, including who's sitting out and which colour belongs to each miniature.
+
+* Choose a saved party, add a saved player or include and exclude individual characters. The builder shows how many players count towards difficulty and how many will enter the tracker.
+* Use unnamed planning groups to calculate difficulty. Tick **Add temporary players to tracker** if those players should enter combat as well.
+* Starting or loading an encounter uses its saved roster and per-copy colours. Switching the active tracker party keeps the combat state of players who remain.
+* Differently coloured copies of a matching creature can share one initiative roll while keeping their own rows. Allies and enemies roll separately, as do creatures with different initiative modifiers. Manual initiative accepts zero.
+* Allies have bold names and retain their ally icon. **Player View** can show the same Mini Colour Indicators, with its own visibility setting. Hidden combatants stay hidden.
+
+#### Find and resume saved encounters
+
+Save from the tracker as soon as you're ready, then find that encounter from either the tracker or the builder.
+
+* Both views use one searchable library. Saved entries show their combatant count and, when available, their save date. Overwriting or deleting a named encounter requires confirmation.
+* The naming dialog opens without scrolling to the bottom. Save and Load open centrally on desktop and higher on touch screens, keeping the controls reachable when the keyboard opens.
+* The builder's workspace draft remembers the encounter name, party and per-copy colours. Multiple copies stay grouped for editing while each keeps its own colour.
+* When an updated settings file arrives through vault sync, the open library picks up incoming saves, deletions and colour changes. Saving a different encounter preserves those updates. Let sync finish before editing the same encounter on another device.
+
+#### Use the tracker on a touch screen
+
+Routine number entry has a built-in keypad, so a full-screen keyboard won't cover the tracker every time you change HP.
+
+* Use the keypad for Quick Damage/Heal, initiative, AC adjustments, effect amounts and combatant stats. Fields that use signed or decimal values accept them on the keypad.
+* Browse and select conditions directly inside Apply Effect on touch screens.
+* Long combatant names wrap and stay left-aligned. Tap the menu beside a name on touch, or use right-click or **Shift+F10** on desktop.
+* The builder puts the party beside the encounter in wide panes and stacks the sections in narrow panes. The bestiary table scrolls within its own area when it needs more room.
+
+#### Read difficulty across six calculators
+
+The builder shows how far an encounter is from each neighbouring bracket. The tracker keeps a compact gauge with details available on demand.
+
+* Choose **Encounter difficulty system** for D&D 5e, D&D 5.5e (2024), Lazy GM, CR2.0 Simple, Flee, Mortals! or Pathfinder 2e. Changing systems refreshes the open views, including creature values, difficulty bands, units and warnings.
+* **Pathfinder 2e** corrects the Low budget adjustment for party size. Creature levels outside the supported XP range now show difficulty as unavailable.
+* **CR2.0 Simple** treats equivalent fractional and decimal challenge ratings consistently. **Lazy GM** shows its strict Deadly threshold accurately.
+* **Flee, Mortals!** uses the same minion grouping for budgeting in the builder and tracker, even when copies have different Mini Colour Indicators. A creature above the CR cap shows the cap warning directly.
+
+#### Validation
+
+The beta passed targeted checks on a laptop and an Android tablet. All 69 automated checks passed, including reference encounters for all six calculators. Packaged clean-install and 13.0.23 upgrade checks passed with disposable data in a simulated Obsidian host. See the README for device and rules coverage.
 
 ### 13.0.24-beta.2 — 2026-09-26 (beta only)
 
