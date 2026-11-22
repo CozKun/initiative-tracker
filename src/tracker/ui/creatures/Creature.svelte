@@ -16,7 +16,7 @@
     export let showBaseColorColumn = true;
     $: statuses = creature.status;
 
-    const name = () => creature.getName();
+    $: name = creature.getName();
     const statblockLink = () => creature.getStatblockLink();
     const hiddenIcon = (div: HTMLElement) => {
         setIcon(div, HIDDEN);
@@ -24,6 +24,7 @@
     const friendlyIcon = (div: HTMLElement) => {
         setIcon(div, FRIENDLY);
     };
+    const actionsIcon = (button: HTMLElement) => setIcon(button, "ellipsis");
 
     const hoverParent: { hoverPopover: null } = { hoverPopover: null };
     let hoverTimeout: NodeJS.Timeout = null;
@@ -80,31 +81,20 @@
     />
 </td>
 <td class="name-container">
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <div
-        class="name-holder"
-        on:click|stopPropagation={(evt) => {
-            dispatch("open-combatant", { creature, newLeaf: evt.ctrlKey || evt.metaKey });
-        }}
-        on:mouseenter={tryHover}
-        on:mouseleave={cancelHover}
-    >
-        {#if creature.hidden}
-            <div class="centered-icon" use:hiddenIcon />
-        {/if}
-        {#if creature.friendly}
-            <div class="centered-icon" use:friendlyIcon />
-        {/if}
-        {#if creature.player}
-            <strong class="name player">{creature.name}</strong>
-        {:else}
-            <span class="name" class:ally={creature.friendly}>{name()}</span>
-        {/if}
+    <div class="identity-line">
+        <button type="button" class="name-holder" aria-label={`Open statblock: ${name}`}
+            on:click|stopPropagation={(evt) => dispatch("open-combatant", { creature, newLeaf: evt.ctrlKey || evt.metaKey })}
+            on:mouseenter={tryHover} on:mouseleave={cancelHover}>
+            {#if creature.hidden}<span class="centered-icon" use:hiddenIcon aria-hidden="true" />{/if}
+            {#if creature.friendly}<span class="centered-icon" use:friendlyIcon aria-hidden="true" />{/if}
+            <span class="name" class:player={creature.player} class:ally={creature.friendly}>{name}</span>
+        </button>
+        <button type="button" class="creature-actions" aria-label={`Actions for ${name}`} use:actionsIcon
+            on:click|stopPropagation={(evt) => showCreatureMenu(creature, () => dispatch("edit", creature), evt)} />
     </div>
-    <button type="button" class="creature-actions" aria-label={`Actions for ${name()}`} on:click|stopPropagation={(evt) => showCreatureMenu(creature, () => dispatch("edit", creature), evt)}>•••</button>
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <div class="statuses" on:click={(e) => e.stopPropagation()}>
-        {#if statuses.size}
+    {#if statuses.size}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div class="statuses" on:click|stopPropagation>
             {#each [...statuses] as status}
                 <Status
                     {status}
@@ -116,8 +106,8 @@
                     }}
                 />
             {/each}
-        {/if}
-    </div>
+        </div>
+    {/if}
 </td>
 
 <td
@@ -126,7 +116,7 @@
     class:health-selected={$quickHealth?.creature === creature}
     role="button"
     tabindex="0"
-    aria-label={`Adjust health: ${name()}`}
+    aria-label={`Adjust health: ${name}`}
     aria-haspopup="dialog"
     aria-expanded={$quickHealth?.creature === creature}
     on:keydown|stopPropagation={(evt) => {
@@ -160,27 +150,35 @@
 </td>
 
 <style scoped>
-    .creature-actions { padding:0 6px; height:24px; background:transparent;box-shadow:none; }
-    .ally { font-weight: 700; }
+    .name-container { padding-inline:0.3rem 0.15rem; vertical-align:middle; }
+    .identity-line { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:0.2rem; }
+    .identity-line button { background:transparent; box-shadow:none; border:0; margin:0; }
+    .creature-actions { display:grid; place-items:center; padding:0; width:1.65rem; height:1.65rem; color:var(--text-muted); }
+    .name.player, .name.ally { font-weight:700; }
     .health-selected { outline: 2px solid var(--interactive-accent); outline-offset: -2px; border-radius: var(--radius-s); }
-    .name-holder {
+    button.name-holder {
         display: flex;
         align-items: center;
         gap: 0.25rem;
-        font-size: small;
+        min-width:0;
+        min-height:1.65rem;
+        padding:0.2rem 0;
+        height:auto;
+        white-space:normal;
+        line-height:1.3;
+        font-size:var(--font-ui-small, 0.875rem);
+        color:inherit;
+        text-align:left;
     }
     .centered-icon {
         display: flex;
         align-items: center;
+        flex-shrink:0;
     }
     .name {
-        display: block;
-        text-align: left;
-        background-color: inherit;
-        border: 0;
-        padding: 0;
-        height: unset;
-        word-break: keep-all;
+        min-width:0;
+        overflow-wrap:anywhere;
+        word-break:normal;
     }
     .center {
         text-align: center;
@@ -200,7 +198,7 @@
     .statuses {
         display: flex;
         flex-flow: row wrap;
-        column-gap: 0.25rem;
+        gap:0.2rem 0.25rem;
     }
 
     .ac-container {
@@ -212,5 +210,9 @@
     }
     .mobile {
         font-size: var(--font-ui-small);
+    }
+    @media (pointer:coarse) {
+        button.name-holder { min-height:44px; font-size:max(0.875rem, var(--font-ui-small, 0.875rem)); }
+        button.creature-actions { width:44px; height:44px; }
     }
 </style>

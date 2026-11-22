@@ -111,9 +111,10 @@ export async function runCommunityChecks(page, browser, url, out, check) {
     await touch.screenshot({path:path.join(out,'touch-effect-keyboard.png')});
     await panel.getByRole('button',{name:'Cancel',exact:true}).tap();
     await touch.getByRole('button',{name:'Adjust health: Goblin 1',exact:true}).tap();
-    box=await touch.getByRole('dialog',{name:'Health: Goblin 1',exact:true}).boundingBox();assert.ok(box.y>=128&&box.y+box.height<=472);
-    await touch.getByLabel('Damage amount',{exact:true}).fill('7');
-    await touch.getByRole('button',{name:'Damage',exact:true}).last().tap();
+    const health=touch.getByRole('dialog',{name:'Health: Goblin 1',exact:true});
+    box=await health.boundingBox();assert.ok(box.y>=128&&box.y+box.height<=472);
+    await health.getByRole('button',{name:'7',exact:true}).tap();
+    await health.locator('button[type=submit]').tap();
     assert.equal(await touch.evaluate(()=>fixture.first.hp),23);
     await touch.evaluate(()=>{fixture.tracker.openEffect(fixture.first);});
     await touch.setViewportSize({width:844,height:390});
@@ -138,6 +139,59 @@ export async function runCommunityChecks(page, browser, url, out, check) {
     await panel.getByText('Statblock for Goblin 1',{exact:true}).waitFor();
     await panel.getByRole('button',{name:'Back to effect',exact:true}).tap();
     assert.equal(await panel.getByLabel('Damage per target').inputValue(),'9');
-    assert.deepEqual(errors,[]);await context.close();
     check('touch actions, 44px Apply, phone rotation and tablet keyboard with viewport-only events and in-place statblocks');
+
+    await touch.setViewportSize({width:1280,height:960});
+    await touch.goto(url+'?tracker-drawer');
+    await touch.addStyleTag({content:'main { width:440px; max-width:calc(100% - 32px); height:630px; margin:0; padding:12px; box-sizing:border-box; position:fixed; top:55px; right:16px; overflow:auto; }'});
+    const longName='Clockwork Commander of the Southern Watch';
+    await touch.evaluate((longName)=>{
+        const {Creature,tracker}=fixture;
+        const guards=Array.from({length:9},(_,i)=>new Creature({name:`Guard ${i+1}`,hp:30,ac:16,baseColor:'#2299DD'},20-i));
+        const commander=new Creature({name:longName,hp:30,ac:16,friendly:true,baseColor:'#E78822'},2);
+        tracker.set([...guards,commander]);
+        window.tabletCommander=commander;
+    },longName);
+    const openStatblock=touch.getByRole('button',{name:`Open statblock: ${longName}`,exact:true});
+    const rowMenu=touch.getByRole('button',{name:`Actions for ${longName}`,exact:true});
+    const adjust=touch.getByRole('button',{name:`Adjust health: ${longName}`,exact:true});
+    await adjust.scrollIntoViewIfNeeded();
+    const nameBox=await openStatblock.boundingBox(), menuBox=await rowMenu.boundingBox(), hpBox=await adjust.boundingBox();
+    assert.ok(nameBox.x+nameBox.width<=menuBox.x && menuBox.x+menuBox.width<=hpBox.x,JSON.stringify({nameBox,menuBox,hpBox}));
+    assert.ok(Math.abs((nameBox.y+nameBox.height/2)-(menuBox.y+menuBox.height/2))<2);
+    assert.ok(menuBox.width>=44 && menuBox.height>=44);
+    assert.ok(await openStatblock.evaluate(node=>parseFloat(getComputedStyle(node).fontSize)>=14 && node.scrollWidth<=node.clientWidth));
+    await openStatblock.tap();
+    assert.ok(await touch.evaluate(()=>window.openedCombatant===window.tabletCommander.id));
+    check('tablet tracker drawer keeps long names, statblock links and row menus in a single readable group');
+
+    await adjust.tap();
+    const tabletHealth=touch.getByRole('dialog',{name:`Health: ${longName}`,exact:true});
+    assert.equal(await tabletHealth.locator('input,textarea,[contenteditable=true]').count(),0);
+    assert.ok(await tabletHealth.evaluate(node=>document.activeElement===node));
+    await tabletHealth.getByRole('button',{name:'1',exact:true}).tap();
+    await tabletHealth.getByRole('button',{name:'8',exact:true}).tap();
+    await tabletHealth.getByRole('button',{name:'Delete last digit',exact:true}).tap();
+    await tabletHealth.getByRole('button',{name:'2',exact:true}).tap();
+    assert.equal(await tabletHealth.getByRole('status',{name:'Damage amount'}).innerText(),'12');
+    await touch.screenshot({path:path.join(out,'tablet-drawer-quick-health.png')});
+    await tabletHealth.locator('button[type=submit]').tap();
+    assert.equal(await touch.evaluate(()=>window.tabletCommander.hp),18);
+    await adjust.tap();
+    await tabletHealth.getByRole('button',{name:'Heal',exact:true}).first().tap();
+    await tabletHealth.getByRole('button',{name:'4',exact:true}).tap();
+    await tabletHealth.locator('button[type=submit]').tap();
+    assert.equal(await touch.evaluate(()=>window.tabletCommander.hp),22);
+    assert.deepEqual(errors,[]);await context.close();
+    check('tablet quick health damages and heals a lower-row target without opening an editable keyboard field');
+
+    await page.goto(url+'?tracker-drawer');
+    const desktopName=page.getByRole('button',{name:'Open statblock: Goblin 1',exact:true});
+    const desktopMenu=page.getByRole('button',{name:'Actions for Goblin 1',exact:true});
+    const desktopNameBox=await desktopName.boundingBox(), desktopMenuBox=await desktopMenu.boundingBox();
+    assert.ok(desktopNameBox.x+desktopNameBox.width<=desktopMenuBox.x);
+    assert.ok(Math.abs((desktopNameBox.y+desktopNameBox.height/2)-(desktopMenuBox.y+desktopMenuBox.height/2))<2);
+    await desktopMenu.click();
+    assert.ok(await page.evaluate(()=>lastMenu.some(item=>item.title==='Apply effect…')));
+    check('desktop tracker puts the actions beside the name and the drag lock leaves the menu usable');
 }

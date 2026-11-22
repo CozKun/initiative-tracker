@@ -11,6 +11,7 @@
     import { DEFAULT_SETTINGS } from "../src/utils/constants";
     import { recentColours } from "../src/utils/recent-colours";
     import CreatureRow from "../src/tracker/ui/creatures/Creature.svelte";
+    import TrackerTable from "../src/tracker/ui/creatures/Table.svelte";
     import QuickHealth from "../src/tracker/ui/QuickHealth.svelte";
     import Updating from "../src/tracker/ui/Updating.svelte";
     import Metadata from "../src/tracker/ui/Metadata.svelte";
@@ -76,6 +77,7 @@
     (window as any).fixture = { tracker, first, second, plugin, log, get, recentColours,
         dnd55DifficultyScale, systemDifficultyScale, getRpgSystem, setDifficultyScenario, Creature, sharesInitiative, SyncedSettings };
     const builderMode = new URLSearchParams(location.search).has("builder");
+    const trackerDrawer = new URLSearchParams(location.search).has("tracker-drawer");
     const catalogueGoblin = { name: "Goblin", hp: 30, ac: 14, cr: "1/4", xp: 50 };
     if (builderMode) {
         plugin.data.rpgSystem = "dnd5e-55";
@@ -117,6 +119,9 @@
     {:else}
     <Controls on:save={() => library = 'save'} on:load={() => library = 'load'} on:add-creatures={() => showAdd = true} />
     {#if showDifficulty}<Metadata />{:else}<h2>Initiative Tracker Beta</h2>{/if}
+    {#if trackerDrawer}
+        <TrackerTable on:open-combatant={(event) => plugin.openCombatant(event.detail.creature)} />
+    {:else}
     <table class="initiative-tracker-table"><thead><tr><th>Colour</th><th>Init</th><th>Name</th><th>HP</th><th>AC</th></tr></thead>
         <tbody>{#each $tracker as creature (creature.id)}
             <tr on:contextmenu|preventDefault={(event) => showCreatureMenu(creature, () => {}, event)}>
@@ -124,6 +129,7 @@
             </tr>
         {/each}</tbody>
     </table>
+    {/if}
     {#key $updateSession}<Updating />{/key}
     {#if $quickHealth}{#key $quickHealth}<QuickHealth session={$quickHealth} />{/key}{/if}
     <button class="outside">Outside panel</button>

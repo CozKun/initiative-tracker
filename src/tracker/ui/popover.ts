@@ -15,10 +15,8 @@ export function popover(node: HTMLElement, options: {
         const viewport = visibleViewport(win);
         const bounds = anchor.getBoundingClientRect();
         node.style.maxWidth = `${Math.max(0, viewport.width - 16)}px`;
+        node.style.maxHeight = `${Math.max(0, viewport.height - 16)}px`;
         const table = anchor.closest("table")?.getBoundingClientRect() ?? bounds;
-        const sideFits = bounds.right + 8 + node.offsetWidth <= viewport.right - 8 || bounds.left - node.offsetWidth - 8 >= viewport.left + 8;
-        const belowTable = options.placement === "side" && !sideFits && table.bottom + 100 < viewport.bottom;
-        node.style.maxHeight = `${Math.max(0, belowTable ? viewport.bottom - table.bottom - 12 : viewport.height - 16)}px`;
         const { width, height } = node.getBoundingClientRect();
         if (options.placement === "side") {
             if (bounds.right + width + 16 <= viewport.right || bounds.left - width - 8 >= viewport.left + 8) {
@@ -26,14 +24,14 @@ export function popover(node: HTMLElement, options: {
                 node.style.top = `${Math.max(viewport.top + 8, Math.min(bounds.top, viewport.bottom - height - 8))}px`;
                 return;
             }
-            if (belowTable) {
+            if (table.bottom >= viewport.top + 4 && table.bottom + height + 12 <= viewport.bottom) {
                 node.style.left = `${Math.max(viewport.left + 8, Math.min(table.left, viewport.right - width - 8))}px`;
                 node.style.top = `${table.bottom + 4}px`;
                 return;
             }
         }
         node.style.left = `${Math.max(viewport.left + 8, Math.min(bounds.left, viewport.right - width - 8))}px`;
-        node.style.top = `${bounds.bottom + height + 8 <= viewport.bottom
+        node.style.top = `${bounds.bottom + height + 12 <= viewport.bottom
             ? Math.max(viewport.top + 8, bounds.bottom + 4) : Math.max(viewport.top + 8, Math.min(bounds.top - height - 4, viewport.bottom - height - 8))}px`;
     };
     const outside = (event: Event) => {

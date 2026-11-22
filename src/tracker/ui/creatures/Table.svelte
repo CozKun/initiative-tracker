@@ -140,6 +140,10 @@
                 flipDurationMs,
                 dropTargetStyle: {},
                 morphDisabled: true,
+                // The drag lock only disables reordering. Keep the native row and its buttons exposed.
+                autoAriaDisabled: true,
+                zoneTabIndex: -1,
+                zoneItemTabIndex: $dragEnabled ? 0 : -1,
                 dragDisabled: !$dragEnabled
             }}
             on:consider={handleDndConsider}
@@ -152,6 +156,7 @@
                     class:active={$state && creature.active}
                     class:viewing={creature.viewing}
                     class:friendly={creature.friendly}
+                    aria-description={$dragEnabled ? "Press Space, use the arrow keys to reorder, then press Space again." : undefined}
                     animate:flip={{ duration: flipDurationMs }}
                     data-hp={creature.hp}
                     data-hp-max={creature.current_max}
@@ -217,6 +222,11 @@
     }
     .ac-column {
         width: 2.75rem;
+    }
+    @media (pointer:coarse) {
+        .base-colour-column, .ac-column { width:2.75rem; }
+        .initiative-column { width:3rem; }
+        .hp-column { width:3.75rem; }
     }
 
     .left {
