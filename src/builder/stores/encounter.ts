@@ -1,6 +1,7 @@
 import { writable } from "svelte/store";
 import { players } from "./players";
-import { copyColours, creatureCount, type EncounterCreature } from "../encounter-creatures";
+import { Creature } from "src/utils/creature";
+import { copyColours, creatureCount, encounterGroupKey, type EncounterCreature } from "../encounter-creatures";
 
 function createEncounter() {
     const store = writable<Map<EncounterCreature, number>>(new Map());
@@ -9,11 +10,14 @@ function createEncounter() {
     const resolve = (item: EncounterCreature) => drafts.get(item) ?? item;
     return {
         players,
+        name: writable("Encounter"),
         subscribe: store.subscribe,
         add: (item: EncounterCreature) => store.update((monsters) => {
             let row = resolve(item);
             if (!monsters.has(row)) {
-                row = { ...item, miniColours: copyColours(item, 1) };
+                const key = encounterGroupKey(Creature.from(item));
+                row = [...monsters.keys()].find((draft) => encounterGroupKey(Creature.from(draft)) === key)
+                    ?? { ...item, miniColours: copyColours(item, 1) };
                 drafts.set(item, row);
             }
             const count = (monsters.get(row) ?? 0) + 1;
@@ -47,15 +51,17 @@ function createEncounter() {
             monsters.set(row, count);
             return monsters;
         }),
-        setMultiple: (creatures: [EncounterCreature, number][]) => store.update((monsters) => {
+        setMultiple: (creatures: [EncounterCreature, number][]) => {
+            const monsters = new Map<EncounterCreature, number>();
+            drafts = new WeakMap();
             for (const [item, rawCount] of creatures) {
                 const count = creatureCount(rawCount);
                 const row = { ...item, miniColours: copyColours(item, count) };
                 drafts.set(item, row);
                 monsters.set(row, count);
             }
-            return monsters;
-        }),
+            store.set(monsters);
+        },
         empty: () => { drafts = new WeakMap(); store.set(new Map()); },
         setColour: (item: EncounterCreature, index: number, colour: string | null) => store.update((monsters) => {
             const row = resolve(item);

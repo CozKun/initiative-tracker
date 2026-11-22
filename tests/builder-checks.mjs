@@ -30,12 +30,12 @@ export async function runBuilderChecks(page, url, out, check) {
 
     await page.getByLabel('Select a party',{exact:true}).selectOption('Test party');
     assert.equal(await page.locator('.named-player').count(),2);
-    assert.match(await page.locator('.party-count').innerText(),/6 included/);
+    assert.match(await page.locator('.party-count').innerText(),/6 in tracker/);
     await page.locator('.named-player').filter({hasText:'Aria'}).getByRole('checkbox').uncheck();
-    assert.match(await page.locator('.party-count').innerText(),/5 included/);
+    assert.match(await page.locator('.party-count').innerText(),/5 in tracker/);
     await page.getByLabel('Select a party',{exact:true}).selectOption('');
     assert.equal(await page.locator('.named-player').count(),0);
-    assert.match(await page.locator('.party-count').innerText(),/4 included/);
+    assert.match(await page.locator('.party-count').innerText(),/4 in tracker/);
     check('saved party selection and individual inclusion controls retain unnamed player groups');
 
     const bestiary = page.locator('.bestiary-test-table');
@@ -97,14 +97,15 @@ export async function runBuilderChecks(page, url, out, check) {
 
     await page.getByRole('button',{name:'Save this encounter and its Mini Colour Indicators',exact:true}).click();
     await page.getByRole('dialog').locator('input').fill('Colour test');
-    await page.getByRole('button',{name:'Save',exact:true}).click();
+    await page.getByRole('dialog',{name:'Save encounter'}).getByRole('button',{name:'Save encounter',exact:true}).click();
+    await page.getByRole('dialog',{name:'Save encounter'}).waitFor({state:'detached'});
     const saved = await page.evaluate(() => fixture.plugin.data.encounters['Colour test'].creatures);
     assert.deepEqual(saved.filter(c => !c.player).map(c => c.baseColor ?? null),['#FF0000','#0000FF',null]);
     assert.equal(saved.filter(c => c.player).length,4);
     assert.equal(new Set(saved.map(c => c.id)).size,7);
     await page.getByRole('button',{name:'Clear the encounter creatures; keep the selected party',exact:true}).click();
     await page.getByRole('button',{name:'Load a saved encounter, replacing the current builder contents',exact:true}).click();
-    await page.evaluate(() => window.lastMenu.find(item => item.title === 'Colour test').action());
+    await page.getByRole('dialog',{name:'Load encounter'}).getByRole('button',{name:/^Colour test /}).click();
     assert.equal(await page.locator('.encounter-creature-card').count(),1);
     assert.equal(await page.locator('.creature-copy').count(),3);
     assert.deepEqual(await colours(),['#FF0000','#0000FF',null]);
@@ -156,11 +157,11 @@ export async function runBuilderChecks(page, url, out, check) {
     assert.equal(await page.locator('.difficulty-caption strong').innerText(),'Add party levels');
     await page.getByLabel('Include in encounter difficulty',{exact:true}).click();
     assert.equal(await page.locator('.difficulty-caption strong').innerText(),'Trivial');
-    await page.locator('.builder-difficulty summary').click();
+    await page.getByRole('button',{name:'Calculation details',exact:true}).click();
     assert.equal(await page.locator('.difficulty-bands').isVisible(),true);
     assert.equal(await page.locator('.difficulty-distance').isVisible(),true);
     assert.equal(await page.locator('.next-bracket').innerText(),'50 XP to Low');
-    await page.locator('.builder-difficulty summary').click();
+    await page.getByRole('button',{name:'Calculation details',exact:true}).click();
     check('budgets react to quantities, level edits and disabled players; collapsing details keeps the gauge visible');
 
     await page.getByLabel('Select a party',{exact:true}).selectOption('Test party');
@@ -170,7 +171,7 @@ export async function runBuilderChecks(page, url, out, check) {
         assert.equal(await region.getAttribute('aria-label'),null);
         assert.ok(await region.getAttribute('aria-labelledby'));
         const bounds = await region.boundingBox();
-        await region.hover({position:{x:1,y:bounds.height-2}});
+        await region.hover({position:{x:5,y:bounds.height-6}});
         await page.waitForTimeout(400);
         assert.equal(await page.getByRole('tooltip').count(),0);
     }

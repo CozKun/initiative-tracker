@@ -1,7 +1,8 @@
 <script lang="ts">
     import {
-        ExtraButtonComponent,
         type MenuItem,
+        setIcon,
+        Notice,
         Platform,
         Menu
     } from "obsidian";
@@ -15,41 +16,18 @@
         PLAY,
         REDO,
         RollPlayerInitiativeBehavior,
-        SAVE,
         STOP
     } from "src/utils";
     import { createEventDispatcher, getContext } from "svelte";
     import type InitiativeTracker from "src/main";
     import { tracker } from "../stores/tracker";
+    import { tooltip } from "src/ui/tooltip";
 
-    const { state, data, logFile, sort, party } = tracker;
+    const { state, data, logFile, sort, party, ordered } = tracker;
 
     const desktop = Platform.isDesktop;
 
-    const playButton = (node: HTMLElement) => {
-        new ExtraButtonComponent(node)
-            .setIcon(PLAY)
-            .setTooltip("Play")
-            .onClick(() => tracker.setState(true));
-    };
-    const stopButton = (node: HTMLElement) => {
-        new ExtraButtonComponent(node)
-            .setIcon(STOP)
-            .setTooltip("Stop")
-            .onClick(() => tracker.setState(false));
-    };
-    const nextButton = (node: HTMLElement) => {
-        new ExtraButtonComponent(node)
-            .setIcon(FORWARD)
-            .setTooltip("Next")
-            .onClick(() => tracker.goToNext());
-    };
-    const prevButton = (node: HTMLElement) => {
-        new ExtraButtonComponent(node)
-            .setIcon(BACKWARD)
-            .setTooltip("Previous")
-            .onClick(() => tracker.goToPrevious());
-    };
+    const icon = (node: HTMLElement, value: string) => setIcon(node, value);
 
     const plugin = getContext<InitiativeTracker>("plugin");
 
@@ -61,11 +39,6 @@
             item.setIcon(NEW)
                 .setTitle("New Encounter")
                 .onClick(() => tracker.new(plugin));
-        });
-        menu.addItem((item) => {
-            item.setIcon(NEW)
-                .setTitle("Add Creatures")
-                .onClick(() => dispatch("add-creatures"));
         });
         menu.addItem((item) => {
             item.setIcon(REDO)
@@ -247,62 +220,20 @@
         }
 
         menu.addSeparator();
-        if (!Platform.isMobile) {
-            menu.addItem((item) => {
-                const load = item
-                    .setIcon("open-elsewhere-glyph")
-                    .setTitle("Load Encounter")
-                    .setDisabled(
-                        Object.keys(plugin.data.encounters).length == 0
-                    )
-                    .setSubmenu()
-                    .setNoIcon();
-
-                for (const encounter of Object.keys(plugin.data.encounters)) {
-                    load.addItem((item) => {
-                        item.setTitle(encounter).onClick(() => {
-                            tracker.new(
-                                plugin,
-                                plugin.data.encounters[encounter]
-                            );
-                        });
-                    });
-                }
-            });
-        } else {
-            menu.addItem((item) => {
-                item.setIcon("open-elsewhere-glyph")
-                    .setTitle("Load Encounter")
-                    .setIsLabel(true);
-            });
-            for (const encounter of Object.keys(plugin.data.encounters)) {
-                menu.addItem((item) => {
-                    item.setTitle(encounter).onClick(() => {
-                        tracker.new(plugin, plugin.data.encounters[encounter]);
-                    });
-                });
-            }
-        }
         menu.addItem((item) => {
-            item.setIcon(SAVE)
-                .setTitle("Save Encounter")
-                .onClick(() => {
-                    dispatch("save");
+            item.setIcon("copy").setTitle("Copy initiative order").onClick(async () => {
+                try {
+                    await navigator.clipboard.writeText($ordered.map((creature) => `${creature.initiative} ${creature.name}`).join("\n"));
+                    new Notice("Initiative order copied to clipboard.");
+                } catch {
+                    new Notice("Could not copy the initiative order.");
+                }
                 });
         });
 
         menu.showAtMouseEvent(evt);
     };
 
-    const menuIcon = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("vertical-three-dots");
-    };
-    const playerView = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("view");
-    };
-    const logFileButton = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("file-signature");
-    };
     const openLogFile = async () => {
         if ($logFile) {
             const leaf = plugin.app.workspace.getLeaf();
@@ -314,37 +245,32 @@
 <div class="buttons">
     <div class="state">
         {#if $state}
-            <div use:stopButton />
-            <div use:prevButton />
-            <div use:nextButton />
+            <button type="button" use:icon={STOP} use:tooltip={{text:"Stop combat",label:"Stop combat"}} on:click={() => tracker.setState(false)} />
+            <button type="button" use:icon={BACKWARD} use:tooltip={{text:"Previous turn",label:"Previous turn"}} on:click={() => tracker.goToPrevious()} />
+            <button type="button" class="mod-cta" on:click={() => tracker.goToNext()}><span use:icon={FORWARD} aria-hidden="true" /> Next turn</button>
         {:else}
-            <div use:playButton />
+            <button type="button" class="mod-cta" disabled={!$ordered.length} on:click={() => tracker.setState(true)}><span use:icon={PLAY} aria-hidden="true" /> Start combat</button>
         {/if}
     </div>
     <div class="clean">
+        <button type="button" on:click={() => dispatch('add-creatures')}>Add</button>
+        <button type="button" on:click={() => dispatch('save')}>Save</button>
+        <button type="button" on:click={() => dispatch('load')}>Load</button>
         {#if $logFile}
-            <div
-                use:logFileButton
-                aria-label="Open Log File"
-                on:click={openLogFile}
-            />
+            <button type="button" use:icon={"file-signature"} use:tooltip={{text:"Open log file",label:"Open log file"}} on:click={openLogFile} />
         {/if}
         {#if desktop}
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <div
-                use:playerView
-                aria-label="Open Player View"
-                on:click={(evt) => dispatch("player-view")}
-            />
+            <button type="button" use:icon={"view"} use:tooltip={{text:"Open player view",label:"Open player view"}} on:click={() => dispatch("player-view")} />
         {/if}
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <div use:menuIcon on:click={(evt) => open(evt)} />
+        <button type="button" use:icon={"ellipsis-vertical"} use:tooltip={{text:"More tracker actions",label:"More tracker actions"}} on:click={open} />
     </div>
 </div>
 
 <style>
     .buttons {
         display: flex;
+        flex-wrap:wrap;
+        gap:0.4rem;
         justify-content: space-between;
         padding: 0 0 0.5rem 0;
     }
@@ -359,8 +285,7 @@
         align-items: center;
     }
 
-    .state > *:not(:last-child),
-    .clean > *:not(:last-child) {
-        margin-right: 0.25rem;
-    }
+    .state, .clean { flex-wrap:wrap; gap:0.3rem; }
+    .mod-cta { display:inline-flex; align-items:center; gap:0.35rem; }
+    .mod-cta span { display:flex; }
 </style>

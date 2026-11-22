@@ -6,20 +6,44 @@ export function floatingPanel(node: HTMLElement) {
     const previousFocus = doc.activeElement as HTMLElement;
     doc.body.appendChild(node);
     let left: number, top = 64;
+    let viewportEvents: VisualViewport | null = null;
+    let frame = 0;
     const constrain = () => {
         const viewport = visibleViewport(win);
         node.style.maxWidth = `${Math.max(0, viewport.width - 16)}px`;
         node.style.maxHeight = `${Math.max(0, viewport.height - 16)}px`;
-        left = Math.max(viewport.left + 8, Math.min(left ?? viewport.right - node.offsetWidth - 16, viewport.right - node.offsetWidth - 8));
-        top = Math.max(viewport.top + 8, Math.min(top, viewport.bottom - node.offsetHeight - 8));
+        if (win.matchMedia("(pointer: coarse)").matches) {
+            left = viewport.left + Math.max(8, (viewport.width - node.offsetWidth) / 2);
+            top = Math.max(viewport.top + 8, viewport.bottom - node.offsetHeight - 8);
+        } else {
+            left = Math.max(viewport.left + 8, Math.min(left ?? viewport.right - node.offsetWidth - 16, viewport.right - node.offsetWidth - 8));
+            top = Math.max(viewport.top + 8, Math.min(top, viewport.bottom - node.offsetHeight - 8));
+        }
         node.style.left = `${left}px`; node.style.top = `${top}px`;
         const focused = doc.activeElement as HTMLElement;
         if (node.contains(focused) && focused.matches('input,select,textarea')) {
-            const field = focused.getBoundingClientRect();
-            const bottom = node.getBoundingClientRect().bottom - (node.querySelector<HTMLElement>('footer')?.offsetHeight ?? 0) - 24;
-            if (field.bottom > bottom) node.scrollTop += field.bottom-bottom;
-            else if (field.top < top+8) node.scrollTop -= top+8-field.top;
+            const scroll = focused.closest<HTMLElement>(".panel-scroll");
+            const bounds = scroll?.getBoundingClientRect();
+            if (bounds) {
+                const field = focused.getBoundingClientRect();
+                if (field.bottom > bounds.bottom - 4) scroll.scrollTop += field.bottom - bounds.bottom + 4;
+                else if (field.top < bounds.top + 4) scroll.scrollTop -= bounds.top - field.top + 4;
+            }
         }
+    };
+    const schedule = () => {
+        if (frame) return;
+        frame = win.requestAnimationFrame(() => { frame = 0; constrain(); });
+    };
+    const connectViewport = () => {
+        if (viewportEvents !== win.visualViewport) {
+            viewportEvents?.removeEventListener("resize", schedule);
+            viewportEvents?.removeEventListener("scroll", schedule);
+            viewportEvents = win.visualViewport;
+            viewportEvents?.addEventListener("resize", schedule);
+            viewportEvents?.addEventListener("scroll", schedule);
+        }
+        schedule();
     };
     let drag: { x: number; y: number } | null = null;
     const down = (e: PointerEvent) => {
@@ -39,14 +63,20 @@ export function floatingPanel(node: HTMLElement) {
         constrain();
     };
     constrain();
-    const observer = new win.ResizeObserver(constrain); observer.observe(node);
+    const observer = new win.ResizeObserver(schedule); observer.observe(node);
     node.addEventListener('pointerdown', down); node.addEventListener('keydown', key);
     doc.addEventListener('pointermove', move); doc.addEventListener('pointerup', up); doc.addEventListener('pointercancel', up);
-    win.addEventListener('resize', constrain);
+    node.addEventListener('focusin', schedule);
+    win.addEventListener('resize', connectViewport);
+    connectViewport();
     return { destroy() {
         observer.disconnect(); node.removeEventListener('pointerdown', down); node.removeEventListener('keydown', key);
         doc.removeEventListener('pointermove', move); doc.removeEventListener('pointerup', up); doc.removeEventListener('pointercancel', up);
-        win.removeEventListener('resize', constrain);
+        win.removeEventListener('resize', connectViewport);
+        node.removeEventListener('focusin', schedule);
+        viewportEvents?.removeEventListener('resize', schedule);
+        viewportEvents?.removeEventListener('scroll', schedule);
+        win.cancelAnimationFrame(frame);
         if (node.contains(doc.activeElement) && previousFocus?.isConnected) previousFocus.focus();
         node.remove();
     } };

@@ -4,141 +4,46 @@
     import Controls from "./Controls.svelte";
     import Table from "./creatures/Table.svelte";
     import Metadata from "./Metadata.svelte";
-    import SaveEncounter from "./SaveEncounter.svelte";
-    import LoadEncounter from "./LoadEncounter.svelte";
-
+    import EncounterLibrary from "src/ui/EncounterLibrary.svelte";
     import { tracker } from "../stores/tracker";
-    import { ExtraButtonComponent, Notice } from "obsidian";
-    import { ADD, COPY } from "src/utils";
     import Updating from "./Updating.svelte";
     import QuickHealth from "./QuickHealth.svelte";
     import Logger from "src/logger/logger";
-
     import { AddCreatureModal } from "./create/modal";
-    import Legacy from "./create/Legacy.svelte";
     import type { Creature } from "src/utils/creature";
-    import Difficulty from "./Difficulty.svelte";
 
     export let plugin: InitiativeTracker;
-
-    const { data, quickHealth, updateSession } = tracker;
-
-    $: difficulty = $data.displayDifficulty;
+    const { name, quickHealth, updateSession } = tracker;
+    setContext("plugin", plugin);
 
     tracker.setData(plugin.data);
     tracker.setLogger(new Logger(plugin));
     if (plugin.data.state) {
-        tracker.new(plugin, plugin.data.state);
+        tracker.new(plugin, plugin.data.state, { useSavedRoster: true, persist: false });
     } else {
         tracker.setParty(plugin.data.defaultParty, plugin);
         tracker.roll(plugin);
     }
 
-    const { ordered } = tracker;
-
-    setContext<InitiativeTracker>("plugin", plugin);
-
-    let saving = false;
-    let loading = false;
-    const editOrAdd = (creature?: Creature) => {
-        const modal = new AddCreatureModal(plugin, creature);
-        modal.open();
-    };
-    const addButton = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setTooltip("Add Creature").setIcon(ADD);
-    };
-    const copyButton = (node: HTMLElement) => {
-        new ExtraButtonComponent(node)
-            .setTooltip("Copy Initiative Order")
-            .setIcon(COPY)
-            .onClick(async () => {
-                const contents = $ordered
-                    .map(
-                        (creature) => `${creature.initiative} ${creature.name}`
-                    )
-                    .join("\n");
-                try {
-                    await navigator.clipboard.writeText(contents);
-                    new Notice("Initiative order copied to clipboard.");
-                } catch (e) {
-                    new Notice(
-                        "Initiative order could not be copied to clipboard."
-                    );
-                }
-            });
-    };
+    let library: "save" | "load" | null = null;
+    const editOrAdd = (creature?: Creature) => new AddCreatureModal(plugin, creature).open();
 </script>
 
 <div class="obsidian-initiative-tracker">
-    <Controls
-        on:save={() => (saving = true)}
-        on:load={() => (loading = true)}
-        on:add-creatures={() => editOrAdd()}
-        on:player-view
-        on:open-map
-    />
-
+    <Controls on:save={() => library = 'save'} on:load={() => library = 'load'}
+        on:add-creatures={() => editOrAdd()} on:player-view on:open-map />
     <Metadata />
-    <Table
-        on:edit={(evt) => editOrAdd(evt.detail)}
-        on:open-combatant={(evt) => plugin.openCombatant(evt.detail.creature, evt.detail.newLeaf)}
-    />
-    {#key $updateSession}
-        <Updating />
-    {/key}
-    {#if $quickHealth}
-        {#key $quickHealth}
-            <QuickHealth session={$quickHealth} />
-        {/key}
-    {/if}
-    {#if saving}
-        <SaveEncounter on:cancel={() => (saving = false)} />
-    {:else if loading}
-        <LoadEncounter on:cancel={() => (loading = false)} />
-    {:else}
-        <div class="add-creature-container">
-            <div class="context-container">
-                <div use:copyButton class="copy-button" />
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <div
-                    use:addButton
-                    class="add-button"
-                    on:click={() => editOrAdd()}
-                />
-            </div>
-        </div>
+    <Table on:edit={(event) => editOrAdd(event.detail)}
+        on:open-combatant={(event) => plugin.openCombatant(event.detail.creature, event.detail.newLeaf)} />
+    {#key $updateSession}<Updating />{/key}
+    {#if $quickHealth}{#key $quickHealth}<QuickHealth session={$quickHealth} />{/key}{/if}
+    {#if library}
+        <EncounterLibrary mode={library} initialName={$name} getSnapshot={tracker.getEncounterState}
+            on:cancel={() => library = null} on:saved={(event) => { $name = event.detail; tracker.updateAndSave(); }}
+            on:load={(event) => tracker.new(plugin, event.detail, {useSavedRoster:true})} />
     {/if}
 </div>
 
-<style scoped>
-    .obsidian-initiative-tracker {
-        margin: 0.5rem;
-        /* margin-bottom: 0.5rem; */
-        min-width: 180px;
-        overflow-y: auto;
-    }
-    .add-creature-container {
-        display: flex;
-        flex-flow: column nowrap;
-        justify-content: flex-start;
-        margin-right: 0.5rem;
-    }
-    .context-container {
-        display: flex;
-        flex-flow: row nowrap;
-        justify-content: space-between;
-    }
-    .copy-button {
-        width: min-content;
-        opacity: 0.25;
-    }
-    .copy-button:hover {
-        opacity: 1;
-    }
-    .add-button {
-        width: min-content;
-    }
-    .add-button :global(.clickable-icon) {
-        margin: 0;
-    }
+<style>
+    .obsidian-initiative-tracker { margin:0.5rem; min-width:0; }
 </style>

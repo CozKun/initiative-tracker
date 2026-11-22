@@ -56,6 +56,10 @@ export async function runNextBuildChecks(page, url, out, check) {
     await panel.getByLabel('Heal each target for',{exact:true}).fill('12');
     await panel.getByRole('button',{name:'Goblin 1',exact:true}).click();
     assert.equal(await page.evaluate(()=>window.openedCombatant===fixture.first.id),true);
+    const secondId = await page.evaluate(() => fixture.second.id);
+    await panel.getByLabel('Creature statblock').selectOption(secondId);
+    await panel.getByText('Statblock for Goblin 2',{exact:true}).waitFor();
+    await panel.getByRole('button',{name:'Back to effect',exact:true}).click();
     assert.equal(await panel.isVisible(),true);assert.equal(await panel.getByLabel('Heal each target for',{exact:true}).inputValue(),'12');
     await page.evaluate(()=>{for(const entry of fixture.get(fixture.tracker.updating).values()){entry.saved=true;entry.resist=true;}});
     await panel.getByLabel('Set individual healing amounts',{exact:true}).check();
@@ -88,19 +92,33 @@ export async function runNextBuildChecks(page, url, out, check) {
     assert.equal(await page.evaluate(()=>[...fixture.first.status].some(s=>s.name==='Custom condition')),false);
     check('temporary HP grant/removal, maximum HP and removing saved custom conditions retain expected behaviour');
 
-    await page.getByRole('button',{name:'Test save encounter',exact:true}).click();
+    await page.getByRole('button',{name:'Save',exact:true}).click();
     const save=page.getByRole('dialog',{name:'Save encounter',exact:true});await save.getByLabel('Encounter name',{exact:true}).fill('Playtest save');await save.getByRole('button',{name:'Save encounter',exact:true}).click();
-    assert.equal(await save.count(),0);
-    await page.getByRole('button',{name:'Test save encounter',exact:true}).click();await save.getByLabel('Encounter name',{exact:true}).fill('Playtest save');await save.getByRole('button',{name:'Save encounter',exact:true}).click();
-    assert.equal(await save.getByRole('button',{name:'Overwrite encounter',exact:true}).count(),1);await save.getByRole('button',{name:'Overwrite encounter',exact:true}).click();
-    check('floating encounter save works and confirms duplicate-name overwrites');
+    await save.waitFor({state:'detached'});
+    await page.getByRole('button',{name:'Save',exact:true}).click();await save.getByLabel('Encounter name',{exact:true}).fill('Playtest save');await save.getByRole('button',{name:'Save encounter',exact:true}).click();
+    await save.getByRole('button',{name:'Overwrite encounter',exact:true}).click();
+    await save.waitFor({state:'detached'});
+    await page.getByRole('button',{name:'Load',exact:true}).click();
+    const load=page.getByRole('dialog',{name:'Load encounter',exact:true});
+    await load.getByRole('searchbox').fill('playtest');
+    await load.getByRole('button',{name:/^Playtest save /}).click();
+    await load.waitFor({state:'detached'});
+    await page.getByRole('button',{name:'Load',exact:true}).click();
+    await load.getByRole('button',{name:'Delete Playtest save',exact:true}).click();
+    await load.getByRole('button',{name:'Keep',exact:true}).click();
+    await load.getByRole('button',{name:'Delete Playtest save',exact:true}).click();
+    await load.getByRole('button',{name:'Confirm deletion of Playtest save',exact:true}).click();
+    await load.getByRole('button',{name:/^Playtest save /}).waitFor({state:'detached'});
+    await load.getByRole('button',{name:'Close encounter library',exact:true}).click();
+    check('tracker saves, searches the shared library and confirms overwrite or deletion');
 
     await page.evaluate(()=>{
+        [fixture.first,fixture.second]=fixture.get(fixture.tracker);
         fixture.first.active=true;fixture.first.initiative=19;fixture.second.initiative=8;
         fixture.plugin.players=new Map([['Aria',new fixture.Creature({name:'Aria',hp:22,ac:15,level:3,player:true})]]);
     });
     for(const role of ['ally','player']){
-        await page.getByRole('button',{name:'Test add combatant',exact:true}).click();const form=page.locator('.coz-add-combatant');
+        await page.getByRole('button',{name:'Add',exact:true}).click();const form=page.locator('.coz-add-combatant');
         await form.getByLabel('Combatant type',{exact:true}).selectOption(role);
         if(role==='player'){await form.getByLabel('Search saved players',{exact:true}).fill('Aria');await form.getByRole('button',{name:'Aria',exact:true}).click();}
         else {await form.getByLabel('Search bestiary',{exact:true}).fill('Ogre');await form.getByRole('button',{name:'Ogre',exact:true}).click();}

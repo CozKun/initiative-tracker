@@ -18,6 +18,7 @@
     export let creatures: Map<Creature, number | string> = new Map();
     export let players: string[];
     export let party: string = null;
+    export let useSavedRoster = false;
 
     export let hide: string[] = [];
 
@@ -92,7 +93,7 @@
             roll: true,
             rollHP,
             newLog: true
-        });
+        }, { useSavedRoster });
         plugin.app.workspace.revealLeaf(view.leaf);
     };
 

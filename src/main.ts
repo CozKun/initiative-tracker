@@ -1,6 +1,7 @@
 import {
     type FrontMatterCache,
     Notice,
+    type Component,
     parseYaml,
     Plugin,
     TFile,
@@ -19,17 +20,19 @@ import {
 
 import { PLAYER_VIEW_VIEW } from "./utils/constants";
 import type { InitiativeTrackerData } from "./settings/settings.types";
+import { SyncedSettings } from "./settings/synced-settings";
 import type { InitiativeViewState } from "./tracker/view.types";
 import type { HomebrewCreature } from "./types/creatures";
 import type { SRDMonster } from "./types/creatures";
 import InitiativeTrackerSettings from "./settings/settings";
 import { EncounterBlock, EncounterParser } from "./encounter";
 import EncounterLine from "./encounter/ui/EncounterLine.svelte";
-import { Creature, getId } from "./utils/creature";
+import { Creature, getId, playerIdentity } from "./utils/creature";
 import TrackerView, { CreatureView } from "./tracker/view";
 import BuilderView from "./builder/view";
 import PlayerView from "./tracker/player-view";
 import { tracker } from "./tracker/stores/tracker";
+import { mountCombatantDetails } from "./tracker/combatant-details";
 import { EncounterSuggester } from "./encounter/editor-suggestor";
 import { API } from "./api/api";
 
@@ -42,6 +45,7 @@ export default class InitiativeTracker extends Plugin {
     public tracker = tracker;
     playerCreatures: Map<string, Creature> = new Map();
     private lastCombatantLeaf: WorkspaceLeaf | null = null;
+    private syncedSettings: SyncedSettings;
     watchers: Map<TFile, HomebrewCreature> = new Map();
     getRoller(str: string) {
         if (!this.canUseDiceRoller) return;
@@ -84,19 +88,16 @@ export default class InitiativeTracker extends Plugin {
     }
 
     getPlayerByName(name: string) {
-        if (!this.players.has(name)) return new Creature({ name });
-        return Creature.from(this.players.get(name));
+        const player = this.players.get(name);
+        return Creature.from({ ...player?.creature, ...player, name, player: true });
     }
     getPlayerNamesForParty(party: string): string[] {
         return this.data.parties?.find((p) => p.name === party)?.players ?? [];
     }
     getPlayersForParty(party: string) {
-        return (
-            this.data.parties
-                ?.find((p) => p.name == party)
-                ?.players.map((p) => this.getPlayerByName(p))
-                ?.filter((p) => p) ?? []
-        );
+        const names = new Map<string, string>();
+        for (const name of this.getPlayerNamesForParty(party)) names.set(playerIdentity({ name }), name);
+        return [...names.values()].map((name) => this.getPlayerByName(name));
     }
 
     get canUseStatBlocks(): boolean {
@@ -122,9 +123,10 @@ export default class InitiativeTracker extends Plugin {
         this.data.encounters[name] = encounter;
         this.registerCommand(name);
     }
-    removeEncounter(name: string) {
+    async removeEncounter(name: string) {
         delete this.data.encounters[name];
         this.unregisterCommandsFor(name);
+        await this.saveSettings();
     }
 
     registerCommand(encounter: string) {
@@ -138,7 +140,7 @@ export default class InitiativeTracker extends Plugin {
                     return encounter in this.data.encounters;
                 }
                 if (!(encounter in this.data.encounters)) return;
-                tracker.new(this, this.data.encounters[encounter]);
+                tracker.new(this, this.data.encounters[encounter], { useSavedRoster: true });
             }
         });
     }
@@ -702,13 +704,13 @@ export default class InitiativeTracker extends Plugin {
     }
 
     async loadSettings() {
-        const data = Object.assign(
-            {},
-            { ...DEFAULT_SETTINGS },
-            await this.loadData()
-        );
-
-        this.data = data;
+        this.data = await this.readSettings() ?? { ...structuredClone(DEFAULT_SETTINGS), state: null };
+        this.syncedSettings = new SyncedSettings(this.data, {
+            current: () => this.data,
+            read: () => this.readSettings(),
+            apply: (data) => this.applySyncedSettings(data),
+            write: (data) => this.saveData(data)
+        });
         if (this.data.statuses?.some((c) => !c.id)) {
             for (const condition of this.data.statuses) {
                 condition.id =
@@ -719,14 +721,42 @@ export default class InitiativeTracker extends Plugin {
             await this.saveSettings();
         }
 
-        this.data.version = this.manifest.version
+        this.data.version = this.manifest.version.split("-")[0]
             .split(".")
             .map((n) => Number(n));
     }
 
-    async saveSettings() {
-        await this.saveData(this.data);
+    private async readSettings(): Promise<InitiativeTrackerData | null> {
+        const data = await this.loadData();
+        return data ? { ...structuredClone(DEFAULT_SETTINGS), state: null, ...data } : null;
+    }
+
+    private applySyncedSettings(data: InitiativeTrackerData) {
+        const { state, players, encounters } = this.data;
+        Object.assign(this.data, data);
+        if (players !== data.players) {
+            this.playerCreatures = new Map(data.players.map((player) => [player.name, Creature.from(player)]));
+        }
+        if (encounters !== data.encounters) {
+            for (const name of Object.keys(encounters)) {
+                if (!(name in data.encounters)) this.unregisterCommandsFor(name);
+            }
+            for (const name of Object.keys(data.encounters)) {
+                if (!(name in encounters)) this.registerCommand(name);
+            }
+        }
         tracker.setData(this.data);
+        if (state !== data.state && data.state?.creatures && this.view) {
+            tracker.new(this, data.state, { useSavedRoster: true, persist: false });
+        }
+    }
+
+    async onExternalSettingsChange() {
+        await this.syncedSettings?.reconcile(false);
+    }
+
+    async saveSettings() {
+        await this.syncedSettings.reconcile(true);
     }
     private getActiveCombatant(): CreatureView | undefined {
         if (
@@ -735,6 +765,9 @@ export default class InitiativeTracker extends Plugin {
             return this.lastCombatantLeaf.view;
         }
         return this.combatant;
+    }
+    attachCombatantDetails(creature: Creature, target: HTMLElement, owner: Component = this) {
+        return mountCombatantDetails(this, creature, target, owner);
     }
     async openCombatant(creature: Creature, newLeaf: boolean = false) {
         if (!this.canUseStatBlocks) return;

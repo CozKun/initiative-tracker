@@ -101,6 +101,7 @@ export async function runCommunityChecks(page, browser, url, out, check) {
         Object.defineProperty(window,'visualViewport',{configurable:true,value:viewport});
         window.dispatchEvent(new Event('resize'));viewport.dispatchEvent(new Event('resize'));
     });
+    await touch.waitForFunction(() => document.querySelector('.effect-panel').getBoundingClientRect().bottom <= 472);
     const field=await panel.getByLabel('Heal each target for',{exact:true}).boundingBox();
     const footer=await panel.locator('footer').boundingBox();
     assert.ok(field.y+field.height<=footer.y,JSON.stringify({field,footer}));
@@ -119,6 +120,24 @@ export async function runCommunityChecks(page, browser, url, out, check) {
     await touch.evaluate(()=>{Object.assign(window.visualViewport,{width:844,height:390,offsetTop:0});window.visualViewport.dispatchEvent(new Event('resize'));});
     await touch.waitForFunction(()=>{const b=document.querySelector('.effect-panel').getBoundingClientRect();return b.x>=8&&b.right<=836&&b.bottom<=382;});
     box=await panel.boundingBox();assert.ok(box.x>=8&&box.x+box.width<=836&&box.y+box.height<=382,JSON.stringify(box));
+    await touch.setViewportSize({width:1024,height:768});
+    await panel.getByLabel('Damage per target').fill('9');
+    await touch.evaluate(()=>{
+        Object.assign(window.visualViewport,{width:1024,height:280,offsetTop:48});
+        window.visualViewport.dispatchEvent(new Event('resize'));
+        window.visualViewport.dispatchEvent(new Event('scroll'));
+    });
+    await touch.waitForFunction(()=>{
+        const detail=document.querySelector('.effect-panel').getBoundingClientRect();
+        const footer=document.querySelector('.effect-panel footer').getBoundingClientRect();
+        const input=document.activeElement.getBoundingClientRect();
+        return detail.top>=56 && detail.bottom<=320 && footer.bottom<=320 && input.bottom<=footer.top;
+    });
+    await touch.screenshot({path:path.join(out,'tablet-effect-keyboard.png')});
+    await panel.getByRole('button',{name:'Statblocks',exact:true}).tap();
+    await panel.getByText('Statblock for Goblin 1',{exact:true}).waitFor();
+    await panel.getByRole('button',{name:'Back to effect',exact:true}).tap();
+    assert.equal(await panel.getByLabel('Damage per target').inputValue(),'9');
     assert.deepEqual(errors,[]);await context.close();
-    check('touch actions, responsive effect cards, 44px Apply target, keyboard viewport bounds and rotation');
+    check('touch actions, 44px Apply, phone rotation and tablet keyboard with viewport-only events and in-place statblocks');
 }

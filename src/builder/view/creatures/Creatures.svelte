@@ -133,23 +133,25 @@
 
     let page = 1;
     $: pages = Math.ceil($filtered.length / slice);
+    $: page = Math.max(1, Math.min(page, pages));
 </script>
 
+<h3 class="builder-section-heading">Bestiary</h3>
 <div class="filters">
     <Filters on:settings={(evt) => settingsMenu(evt)} />
 </div>
 
-{#if $allHeaders.length}
+{#if !$filtered.length}
+    <p class="no-creatures">{plugin.bestiary.length ? 'No creatures match your filters.' : 'No bestiary creatures available.'}</p>
+{:else if $allHeaders.length}
+    <div class="bestiary-scroll" role="region" aria-label="Bestiary results" tabindex="0">
     <table>
         <thead>
             {#each $allHeaders as header (header.text)}
-                <th
-                    use:tooltip={header.field === "xp" ? "XP per creature. Click to sort by XP." : `Sort by ${header.text}`}
-                    on:click={() => {
-                        table.sort(header);
-                    }}
-                >
-                    <div class="table-header">
+                <th aria-sort={header.active ? ($sortDir ? 'ascending' : 'descending') : 'none'}>
+                    <button type="button" class="table-header"
+                        use:tooltip={header.field === "xp" ? "XP per creature. Click to sort by XP." : `Sort by ${header.text}`}
+                        on:click={() => table.sort(header)}>
                         <span class="table-header-content">{header.text}</span>
                         {#if header.active}
                             {#if $sortDir}
@@ -158,7 +160,7 @@
                                 <div class="has-icon" use:sortDown />
                             {/if}
                         {/if}
-                    </div>
+                    </button>
                 </th>
             {/each}
         </thead>
@@ -168,25 +170,28 @@
             {/each}
         </tbody>
     </table>
+    </div>
 {/if}
 
+{#if pages > 1}
 <Pagination
     {slice}
     {page}
     {pages}
-    on:slice={(evt) => (slice = evt.detail)}
+    on:slice={(evt) => { slice = evt.detail; page = 1; }}
     on:previous={() => (page = page - 1)}
     on:next={() => (page = Math.min(page + 1, pages))}
     on:page={(evt) => (page = evt.detail)}
 />
+{/if}
 
 <style scoped>
     .filters {
-        margin: 1rem 0;
+        margin:0.55rem 0;
     }
     .table-header {
         display: flex;
-        gap: 0.25rem;
+        gap:0.25rem; align-items:center; padding:0.3rem 0.45rem; box-shadow:none; background:transparent;
     }
 
     .has-icon {
@@ -197,4 +202,6 @@
     table {
         width: 100%;
     }
+    .bestiary-scroll { overflow-x:auto; max-width:100%; }
+    .no-creatures { color:var(--text-muted); }
 </style>

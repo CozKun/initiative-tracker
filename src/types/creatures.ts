@@ -41,6 +41,7 @@ export interface HomebrewCreature {
     level?: number;
     player?: boolean;
     marker?: string;
+    builderPlaceholder?: boolean;
     baseColor?: string;
     id?: string;
     xp?: number;

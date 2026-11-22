@@ -26,34 +26,46 @@ export function expandEncounter(entries: Iterable<[EncounterCreature, number]>):
     }));
 }
 
+export function encounterGroupKey(creature: Creature): string {
+    return JSON.stringify([
+        creature.name, creature.display, creature.path, creature.note, creature["statblock-link"],
+        creature.max, creature.ac, creature.hit_dice, creature.rollHP ?? false, creature.modifier,
+        creature.cr, creature.xp, creature.level, creature.marker, creature.hidden, creature.friendly,
+        creature.static, creature.static ? creature.initiative : null
+    ]);
+}
+
 export function groupEncounterCreatures(creatures: Creature[]): [EncounterCreature, number][] {
     const groups = new Map<string, [EncounterCreature, number]>();
     for (const creature of creatures) {
-        const { id, baseColor, ...state } = creature.toJSON();
-        const key = JSON.stringify(state);
+        const { id, baseColor, active, currentHP, currentMaxHP, tempHP, currentAC, status,
+            enabled, autoUnconsciousName, initiative, ...definition } = creature.toJSON();
+        const key = encounterGroupKey(creature);
         const group = groups.get(key);
         if (group) {
             group[0].miniColours.push(baseColor ?? null);
             group[1]++;
         } else {
-            groups.set(key, [{ ...creature, miniColours: [baseColor ?? null] }, 1]);
+            const row = { ...creature.creature, ...definition, miniColours: [baseColor ?? null] } as EncounterCreature;
+            delete row.baseColor;
+            if (creature.static) row.initiative = initiative;
+            else delete row.initiative;
+            groups.set(key, [row, 1]);
         }
     }
     return [...groups.values()];
 }
 
-/** Keep the existing compact syntax unless individual colours need to be saved. */
 export function encounterBlockCreatures(entries: Iterable<[EncounterCreature, number]>) {
-    const result: Record<number, string | { creature: string; baseColor?: string; ally?: boolean; hidden?: boolean }>[] = [];
+    const result: Record<number, { creature: string; baseColor: string | null; ally?: boolean; hidden?: boolean }>[] = [];
     for (const [creature, count] of entries) {
         const colours = copyColours(creature, count);
-        if (!colours.some(Boolean)) {
-            result.push({ [count]: `${creature.name}${creature.friendly ? ", friendly" : ""}${creature.hidden ? ", hidden" : ""}` });
+        const details = { creature: creature.name, ...(creature.friendly ? { ally: true } : {}),
+            ...(creature.hidden ? { hidden: true } : {}) };
+        if (colours.every((colour) => colour === colours[0])) {
+            result.push({ [colours.length]: { ...details, baseColor: colours[0] } });
         } else {
-            result.push(...colours.map((baseColor) => ({
-                1: { creature: creature.name, ...(baseColor ? { baseColor } : {}),
-                    ...(creature.friendly ? { ally: true } : {}), ...(creature.hidden ? { hidden: true } : {}) }
-            })));
+            result.push(...colours.map((baseColor) => ({ 1: { ...details, baseColor } })));
         }
     }
     return result;

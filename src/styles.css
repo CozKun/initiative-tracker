@@ -35,15 +35,15 @@
 
 /* Shared non-modal tracker panels stay available while statblocks are opened. */
 .coz-tracker-panel {
-    position: fixed; z-index: 80; box-sizing: border-box; overflow: auto;
-    display: flex; flex-direction: column; gap: 12px; padding: 16px;
+    position: fixed; z-index: var(--layer-popover, 1000); box-sizing: border-box; overflow: auto;
+    display: flex; flex-direction: column; gap: 8px; padding: 12px;
     background: var(--background-primary); color: var(--text-normal);
     border: 1px solid var(--background-modifier-border); border-radius: 10px;
     box-shadow: var(--shadow-s, 0 8px 30px #0003); font-size: var(--font-ui-small);
 }
 .coz-tracker-panel header, .coz-tracker-panel footer { display:flex;align-items:center;gap:8px; }
 .coz-tracker-panel header strong { flex:1; }
-.coz-tracker-panel footer { justify-content:flex-end;margin-top:10px; }
+.coz-tracker-panel footer { justify-content:flex-end; padding-top:6px; border-top:1px solid var(--background-modifier-border); }
 .coz-tracker-panel .panel-drag { cursor:move;touch-action:none; }
 .coz-tracker-panel input, .coz-tracker-panel select { max-width:100%; }
 
@@ -54,10 +54,13 @@
     }
     :is(.coz-tracker-panel,.coz-add-combatant,.quick-health,.coz-mini-colour-popover) input:not([type=checkbox]):not([type=range]):not([type=color]) { min-height:44px;font-size:16px; }
     .coz-tracker-panel input[type=checkbox] { width:32px;height:32px; }
+    .coz-tracker-panel .panel-drag { display:none; }
     .coz-tracker-panel .target-choices label { min-height:44px; }
     .obsidian-initiative-tracker :is(.health-container,.ac-container) { min-width:44px;height:44px; }
     .obsidian-initiative-tracker input.initiative { min-width:44px;min-height:44px;font-size:16px; }
     .obsidian-initiative-tracker .name { overflow-wrap:anywhere;word-break:normal; }
 }
 .coz-tracker-panel > * { flex-shrink:0; }
-.coz-tracker-panel footer { position:sticky;bottom:0;background:var(--background-primary);padding:8px 0;z-index:1; }
+.coz-tracker-panel :is(.panel-scroll,.panel-form) { flex:1 1 auto; min-height:0; }
+.coz-tracker-panel .panel-scroll { overflow:auto; overscroll-behavior:contain; }
+.coz-tracker-panel footer { flex-shrink:0; }

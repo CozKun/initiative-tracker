@@ -1,15 +1,7 @@
-import type { CreatureState, HomebrewCreature } from "src/types/creatures";
+import type { BuilderPlayerSelection } from "src/builder/stores/players";
+import type { CreatureState } from "src/types/creatures";
 
 export interface InitiativeViewState {
-    creatures: CreatureState[];
-    state: boolean;
-    name: string;
-    round: number;
-    logFile: string;
-    roll?: boolean;
-    rollHP?: boolean;
-    timestamp?: number;
-}export interface InitiativeViewState {
     creatures: CreatureState[];
     state: boolean;
     name: string;
@@ -19,5 +11,6 @@ export interface InitiativeViewState {
     roll?: boolean;
     rollHP?: boolean;
     timestamp?: number;
+    builderPlayers?: BuilderPlayerSelection[];
 }
 

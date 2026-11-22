@@ -1,11 +1,9 @@
 <script lang="ts">
     import type InitiativeTracker from "src/main";
-    import { onDestroy, setContext } from "svelte";
-    import { players } from "../stores/players";
+    import { setContext } from "svelte";
 
     import Creatures from "./creatures/Creatures.svelte";
-    import Encounter from "./encounter/Encounter.svelte";
-    import PartyExperience from "./party/PartyExperience.svelte";
+    import BuilderLayout from "./BuilderLayout.svelte";
     import {
         type BuiltFilterStore,
         createFilterStore
@@ -29,15 +27,10 @@
     }
     setContext("plugin", plugin);
 
-    onDestroy(() => {
-        players.empty();
-    });
 </script>
 
 <div class="initiative-tracker encounter-builder markdown-rendered">
-    <PartyExperience />
-    <Encounter />
-    <Creatures />
+    <BuilderLayout><Creatures /></BuilderLayout>
 </div>
 
 <style>

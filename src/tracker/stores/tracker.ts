@@ -1,4 +1,4 @@
-import { Creature, getId } from "src/utils/creature";
+import { Creature, getId, playerIdentity } from "src/utils/creature";
 import type InitiativeTracker from "../../main";
 import {
     derived,
@@ -630,10 +630,18 @@ function createTracker() {
         party: $party,
         setParty: (party: string, plugin: InitiativeTracker) =>
             updateAndSave((creatures) => {
-                const players = plugin.getPlayersForParty(party);
+                const currentPlayers = new Map(creatures.filter((creature) => creature.player)
+                    .map((creature) => [playerIdentity(creature), creature]));
+                const players = plugin.getPlayersForParty(party).map((creature) => currentPlayers.get(playerIdentity(creature)) ?? creature);
+                const next = [...creatures.filter((creature) => !creature.player), ...players];
+                if (get($state) && next.length && !next.some((creature) => creature.active)) {
+                    const activeIndex = current_order.findIndex((creature) => creature.active);
+                    const remainingTurns = [...current_order.slice(activeIndex + 1), ...current_order.slice(0, Math.max(0, activeIndex))];
+                    const successor = remainingTurns.find((creature) => next.includes(creature) && creature.enabled) ?? next.find((creature) => creature.enabled);
+                    if (successor) successor.active = true;
+                }
                 $party.set(party);
-                creatures = [...creatures.filter((c) => !c.player), ...players];
-                return creatures;
+                return next;
             }),
 
         state: $state,
@@ -797,8 +805,12 @@ function createTracker() {
                 rollIntiative(plugin, creatures);
                 return creatures;
             }),
-        new: (plugin: InitiativeTracker, state?: InitiativeViewState) =>
-            updateAndSave((creatures) => {
+        new: (plugin: InitiativeTracker, state?: InitiativeViewState, { useSavedRoster = false, persist = true } = {}) => {
+            quickHealth.set(null);
+            updating.set(new Map());
+            updateTarget.set(null);
+            updateSession.set(null);
+            update((creatures) => {
                 $round.set(state?.round ?? 1);
                 $state.set(state?.state ?? false);
                 $name.set(state?.name ?? null);
@@ -809,45 +821,32 @@ function createTracker() {
                      */
                     creatures = creatures.filter((c) => c.player);
                 } else {
-                    /**
-                     * Encounter is being started. Keep any pre-existing players that are incoming.
-                     */
-                    const tempCreatureArray: Creature[] = [];
-
+                    const roster = new Map<string, Creature>();
+                    const existingPlayers = creatures.filter((c) => c.player);
                     const party = get($party);
-                    const players = new Map(
-                        [
-                            ...(party ? plugin.getPlayersForParty(party) : []),
-                            ...creatures.filter((p) => p.player)
-                        ].map((c) => [c.id, c])
-                    ).values();
-                    for (const creature of state.creatures) {
-                        /* const ; */
-                        let existingPlayer: Creature | null = null;
-                        if (
-                            creature.player &&
-                            (existingPlayer = creatures.find(
-                                (c) => c.player && c.id === creature.id
-                            )) &&
-                            existingPlayer != null
-                        ) {
-                            tempCreatureArray.push(existingPlayer);
-                        } else {
-                            tempCreatureArray.push(
-                                Creature.fromJSON(creature, plugin)
-                            );
+                    // Explicit rosters own the state on their saved rows, including colours and exclusions.
+                    creatures = state.creatures.flatMap((saved) => {
+                        if (!saved.player) return [Creature.fromJSON(saved, plugin)];
+                        const key = playerIdentity(saved);
+                        if (roster.has(key)) return [];
+                        const existing = useSavedRoster ? undefined : existingPlayers.find((player) => playerIdentity(player) === key);
+                        const restored = existing ?? Creature.fromJSON(saved, plugin);
+                        roster.set(key, restored);
+                        return [restored];
+                    });
+                    if (useSavedRoster) {
+                        const matchingParty = plugin.data.parties.find((entry) =>
+                            entry.players.length === roster.size && entry.players.every((name) => roster.has(playerIdentity({ name })))
+                        );
+                        $party.set(matchingParty?.name ?? null);
+                    } else {
+                        for (const player of [...existingPlayers, ...(party ? plugin.getPlayersForParty(party) : [])]) {
+                            const key = playerIdentity(player);
+                            if (roster.has(key)) continue;
+                            roster.set(key, player);
+                            creatures.push(player);
                         }
                     }
-                    for (const player of players) {
-                        if (
-                            !tempCreatureArray.find(
-                                (p) => p.player && p.id == player.id
-                            )
-                        ) {
-                            tempCreatureArray.push(player);
-                        }
-                    }
-                    creatures = tempCreatureArray;
                 }
                 if (!state || state?.roll) {
                     rollIntiative(plugin, creatures);
@@ -865,12 +864,14 @@ function createTracker() {
                         $logFile.set(_logger.getFile());
                     });
                 }
-                if ((!state && _logger) || state?.newLog) {
-                    _logger.logging = false;
+                if (!state || state.newLog) {
+                    if (_logger) _logger.logging = false;
                     $logFile.set(null);
                 }
                 return creatures;
-            }),
+            });
+            if (persist) trySave();
+        },
         reset: () =>
             updateAndSave((creatures) => {
                 for (let creature of creatures) {

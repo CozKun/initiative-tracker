@@ -1,8 +1,8 @@
 <script lang="ts">
     import { tracker } from "src/tracker/stores/tracker";
-    import { tooltip, tooltipOptions } from "src/ui/tooltip";
+    import { tooltip } from "src/ui/tooltip";
     import type { SRDMonster } from "src/types/creatures";
-    import { ExtraButtonComponent, setIcon } from "obsidian";
+    import { setIcon } from "obsidian";
     import { getContext } from "svelte";
     import { encounter } from "../../stores/encounter";
     import Nullable from "../Nullable.svelte";
@@ -20,9 +20,7 @@
     export let creature: SRDMonster;
     const { data } = tracker;
     $: xp = ($data.rpgSystem, table.xpFor(creature, $levels));
-    const add = (node: HTMLElement) => {
-        new ExtraButtonComponent(node).setIcon("plus-with-circle").setTooltip("Add a copy to the encounter", tooltipOptions);
-    };
+    const add = (node: HTMLElement) => setIcon(node, "plus-circle");
     function stringify(
         property: Record<string, any> | string | any[] | number | boolean,
         depth: number = 0,
@@ -80,7 +78,9 @@
 <tr class="creature">
     <td>
         <div class="creature-name-container">
-            <div use:add on:click={() => encounter.add(creature)} />
+            <button type="button" class="clickable-icon" use:add
+                use:tooltip={{text:`Add ${creature.name} to the encounter`,label:`Add ${creature.name} to the encounter`}}
+                on:click={() => encounter.add(creature)} />
             <!-- svelte-ignore a11y-mouse-events-have-key-events -->
             <div
                 use:tooltip={"Open creature details. Ctrl/Cmd-click opens a new pane."}

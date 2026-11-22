@@ -17,6 +17,7 @@
     export let name: string = "Encounter";
     export let creatures: Map<Creature, number | string>;
     export let players: string[];
+    export let useSavedRoster = false;
 
     export let hide: string[] = [];
     export let playerLevels: number[];
@@ -83,7 +84,7 @@
                     newLog: true,
                     roll: true,
                     rollHP
-                });
+                }, { useSavedRoster });
                 plugin.app.workspace.revealLeaf(view.leaf);
             });
     };

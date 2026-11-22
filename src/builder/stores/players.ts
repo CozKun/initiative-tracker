@@ -1,6 +1,6 @@
 import { derived, get, writable } from "svelte/store";
 import type { CreatureState } from "src/types/creatures";
-import { Creature } from "src/utils/creature";
+import { Creature, playerIdentity } from "src/utils/creature";
 
 export const playerCount = writable(0);
 
@@ -16,8 +16,23 @@ export interface GenericPlayer extends Partial<CreatureState> {
     isPlayer: false;
     enabled: boolean;
     count: number;
+    includeInTracker?: boolean;
 }
 export type CombinedPlayer = Player | GenericPlayer;
+export type BuilderPlayerSelection = Pick<CombinedPlayer, "isPlayer" | "level" | "enabled" | "count"> & { name?: string; includeInTracker?: boolean };
+
+export function savePlayerSelection(items: CombinedPlayer[]): BuilderPlayerSelection[] {
+    return items.map((player) => ({ isPlayer: player.isPlayer, name: player.name, level: player.level,
+        enabled: player.enabled, count: player.count,
+        ...(player.isPlayer === false ? { includeInTracker: player.includeInTracker !== false } : {}) }));
+}
+
+function trackerCount(player: CombinedPlayer): number {
+    if (!player.enabled) return 0;
+    if (player.isPlayer === true) return 1;
+    if (player.includeInTracker === false) return 0;
+    return Number.isSafeInteger(player.count) && player.count > 0 ? player.count : 0;
+}
 
 export function enabledPlayerLevels(players: CombinedPlayer[]): number[] {
     return players.filter((p) => p.enabled && Number.isInteger(p.level) && p.level > 0)
@@ -26,17 +41,25 @@ export function enabledPlayerLevels(players: CombinedPlayer[]): number[] {
 
 export function expandPlayers(items: CombinedPlayer[], findPlayer: (name: string) => Creature | undefined): Creature[] {
     let unnamed = 0;
-    return items.filter((player) => player.enabled).flatMap((player) =>
-        Array.from({ length: Number.isSafeInteger(player.count) && player.count > 0 ? player.count : 0 }, () => {
+    return items.flatMap((player) =>
+        Array.from({ length: trackerCount(player) }, () => {
             const source = player.isPlayer ? findPlayer(player.name) : undefined;
-            const creature = source ? Creature.new(source) : Creature.from({ ...player,
+            return Creature.from({ ...source, ...player, player: true,
+                builderPlaceholder: !player.isPlayer,
                 name: player.isPlayer ? player.name : `Player ${++unnamed}` });
-            if (source) creature.id = source.id;
-            creature.player = true;
-            creature.level = player.level;
-            return creature;
         })
     );
+}
+
+function uniquePlayers(items: CombinedPlayer[]): CombinedPlayer[] {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+        if (!item.isPlayer) return true;
+        const key = playerIdentity(item);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 function createPlayers() {
@@ -59,6 +82,7 @@ function createPlayers() {
         party,
         generics,
         levels: derived(store, enabledPlayerLevels),
+        trackerCount: derived(store, (items) => items.reduce((sum, player) => sum + trackerCount(player), 0)),
         count,
         modifier: derived(count, ($count) =>
             $count < 3 ? 1 : $count > 5 ? -1 : 0
@@ -73,18 +97,21 @@ function createPlayers() {
                     item.count = 1;
                 }
                 players.push(item);
-                return players;
+                return uniquePlayers(players);
             }),
-        addFromState: (state: CreatureState) =>
-            update((players) => {
-                const item = state as Player;
-                item.isPlayer = true;
-                if (!item.count || item.count <= 0) {
-                    item.count = 1;
-                }
-                players.push(item);
-                return players;
-            }),
+        restore: (creatures: CreatureState[], selection?: BuilderPlayerSelection[]) => {
+            const roster = creatures.filter((creature) => creature.player);
+            if (selection) {
+                set(uniquePlayers(selection.map((item) => ({
+                    ...(item.isPlayer ? roster.find((creature) => !creature.builderPlaceholder && creature.name === item.name) : {}),
+                    ...item
+                } as CombinedPlayer))));
+                return;
+            }
+            set(uniquePlayers(roster.map((creature) => ({
+                ...creature, isPlayer: !creature.builderPlaceholder, count: 1, enabled: creature.enabled !== false
+            } as CombinedPlayer))));
+        },
         remove: (item: CombinedPlayer) =>
             update((players) => {
                 players = players.filter((p) => p != item);
@@ -107,11 +134,14 @@ function createPlayers() {
                 player!.level = level;
                 return players;
             }),
+        setTrackerInclusion: (item: GenericPlayer, include: boolean) => update((players) => {
+            item.includeInTracker = include;
+            return players;
+        }),
 
         switchParty: (items: Player[]) => {
             update((players) => {
-                players = [...items, ...get(generics)];
-                return players;
+                return uniquePlayers([...items, ...get(generics)]);
             });
         },
         empty: () => {

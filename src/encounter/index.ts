@@ -5,7 +5,7 @@ import { Creature } from "../utils/creature";
 import EncounterUI from "./ui/Encounter.svelte";
 import EncounterTable from "./ui/EncounterTable.svelte";
 
-type RawCreatureDetails = { creature: string; name?: string; baseColor?: string; [key: string]: unknown };
+type RawCreatureDetails = { creature: string; name?: string; baseColor?: string | null; [key: string]: unknown };
 type RawCreature = string | { [key: number]: string | RawCreatureDetails };
 type RawCreatureArray = string | RawCreature[];
 type RawPlayers = boolean | "none" | string[];
@@ -75,6 +75,7 @@ export interface ParsedParams {
     xp: number;
     playerLevels: number[];
     rollHP?: boolean;
+    useSavedRoster?: boolean;
 }
 
 export class EncounterParser {
@@ -82,10 +83,8 @@ export class EncounterParser {
     async parse(params: EncounterParameters): Promise<ParsedParams> {
         const name = params.name;
         const players: string[] = this.parsePlayers(params);
-        const party =
-            params.party ?? players.length
-                ? null
-                : this.plugin.data.defaultParty;
+        const useSavedRoster = params.players !== undefined || !!params.party;
+        const party = !useSavedRoster && !players.length ? this.plugin.data.defaultParty : null;
         const hide = this.parseHide(params);
         const rawMonsters = params.creatures ?? [];
 
@@ -106,7 +105,8 @@ export class EncounterParser {
             creatures,
             xp,
             playerLevels,
-            rollHP
+            rollHP,
+            useSavedRoster
         };
     }
     parseHide(params: EncounterParameters): string[] {
@@ -144,17 +144,11 @@ export class EncounterParser {
         } else if (typeof players == "string") {
             playersToReturn.push(players);
         } else if (Array.isArray(players)) {
-            playersToReturn.push(
-                ...[...(this.plugin.players.values() ?? [])]
-                    .map((p) => p.name)
-                    .filter((p) =>
-                        (players as string[])
-                            .map((n) => n.toLowerCase())
-                            .includes(p.toLowerCase())
-                    )
-            );
+            const registered = new Map([...this.plugin.players.keys()].map((name) => [name.toLowerCase(), name]));
+            playersToReturn.push(...players.filter((name) => typeof name === "string" && name.trim())
+                .map((name) => registered.get(name.trim().toLowerCase()) ?? name.trim()));
         }
-        if (!playersToReturn.length) {
+        if (!playersToReturn.length && players === undefined && !params.party) {
             let partyName = this.plugin.defaultParty?.name;
 
             if (
@@ -327,9 +321,11 @@ export class EncounterParser {
         creature.hidden = hidden ?? creature.hidden;
         creature.friendly = friendly ?? creature.friendly;
         creature.rollHP = rollHP ?? globalRollHP ?? creature.rollHP;
-        if (typeof monster === "object" && !Array.isArray(monster) &&
-            typeof monster.baseColor === "string" && /^#[0-9a-f]{6}$/i.test(monster.baseColor)) {
-            creature.baseColor = monster.baseColor.toUpperCase();
+        if (typeof monster === "object" && !Array.isArray(monster)) {
+            if (monster.baseColor === null) creature.baseColor = undefined;
+            else if (typeof monster.baseColor === "string" && /^#[0-9a-f]{6}$/i.test(monster.baseColor)) {
+                creature.baseColor = monster.baseColor.toUpperCase();
+            }
         }
 
         return { creature, number };
@@ -356,7 +352,8 @@ class EncounterComponent {
                 playerLevels: this.params.playerLevels,
                 creatures: this.params.creatures,
                 hide: this.params.hide,
-                rollHP: this.params.rollHP
+                rollHP: this.params.rollHP,
+                useSavedRoster: this.params.useSavedRoster
             }
         });
     }

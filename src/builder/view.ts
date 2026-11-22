@@ -6,6 +6,7 @@ import Builder from "./view/Builder.svelte";
 import { encounter } from "./stores/encounter";
 import { get } from "svelte/store";
 import type { SRDMonster } from "src/types/creatures";
+import { savePlayerSelection, type BuilderPlayerSelection } from "./stores/players";
 
 interface BuilderContext {
     plugin: InitiativeTracker;
@@ -22,11 +23,13 @@ declare module "svelte" {
 }
 
 export default class BuilderView extends ItemView {
+    private stopSavingDraft: (() => void)[] = [];
     constructor(leaf: WorkspaceLeaf, public plugin: InitiativeTracker) {
         super(leaf);
     }
     getState(): Record<string, unknown> {
-        return { encounter: [...get(encounter).entries()] };
+        return { encounter: [...get(encounter).entries()],
+            name: get(encounter.name), partySelection: savePlayerSelection(get(encounter.players)) };
     }
     async setState(
         state: Record<string, unknown>,
@@ -39,10 +42,14 @@ export default class BuilderView extends ItemView {
                 : state?.encounter
         ) as [SRDMonster, number][] | undefined;
         if (entries && Array.isArray(entries)) encounter.setMultiple(entries);
-        super.setState(state, result);
+        if (typeof state?.name === "string") encounter.name.set(state.name);
+        if (Array.isArray(state?.partySelection)) encounter.players.restore([], state.partySelection as BuilderPlayerSelection[]);
+        await super.setState(state, result);
     }
     ui: Builder;
     async onOpen() {
+        const saveDraft = () => this.app.workspace.requestSaveLayout();
+        this.stopSavingDraft = [encounter.subscribe(saveDraft), encounter.name.subscribe(saveDraft), encounter.players.subscribe(saveDraft)];
         if (
             this.plugin.canUseStatBlocks &&
             !window["FantasyStatblocks"].isResolved()
@@ -75,6 +82,7 @@ export default class BuilderView extends ItemView {
         }
     }
     async onClose() {
+        this.stopSavingDraft.forEach((stop) => stop());
         this.ui?.$destroy();
     }
     getDisplayText(): string {

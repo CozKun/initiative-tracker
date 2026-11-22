@@ -1,6 +1,7 @@
 <script lang="ts">
     import AddCombatant from "../src/tracker/ui/create/AddCombatant.svelte";
-    import SaveEncounter from "../src/tracker/ui/SaveEncounter.svelte";
+    import EncounterLibrary from "../src/ui/EncounterLibrary.svelte";
+    import Controls from "../src/tracker/ui/Controls.svelte";
     import PlayerView from "../src/tracker/player/PlayerView.svelte";
     import { sharesInitiative } from "../src/utils/shared-initiative";
     import { setContext } from "svelte";
@@ -16,14 +17,14 @@
     import { dnd55DifficultyScale, systemDifficultyScale } from "../src/utils/difficulty-scale";
     import { getRpgSystem } from "../src/utils/rpg-system";
     import { showCreatureMenu } from "../src/tracker/ui/creatures/creature-menu";
-    import BuilderEncounter from "../src/builder/view/encounter/Encounter.svelte";
-    import PartyExperience from "../src/builder/view/party/PartyExperience.svelte";
+    import BuilderLayout from "../src/builder/view/BuilderLayout.svelte";
     import { encounter } from "../src/builder/stores/encounter";
     import { players as builderPlayers } from "../src/builder/stores/players";
     import { expandEncounter, groupEncounterCreatures, encounterBlockCreatures } from "../src/builder/encounter-creatures";
     import { EncounterParser } from "../src/encounter";
     import { createTable } from "../src/builder/stores/table/table";
     import BestiaryCreature from "../src/builder/view/creatures/Creature.svelte";
+    import { SyncedSettings } from "../src/settings/synced-settings";
 
     const { quickHealth, updateSession, updating } = tracker;
     const saved = JSON.parse(localStorage.getItem("beta-fixture") ?? "null");
@@ -34,11 +35,17 @@
         getPlayersForParty() { return []; },
         getPlayerByName() { return null; },
         addEncounter(name: string, state: any) { this.data.encounters[name] = state; },
+        async removeEncounter(name: string) { delete this.data.encounters[name]; await this.saveSettings(); },
         view: { leaf: {} },
         canUseDiceRoller: false,
         getInitiativeValue() { return 10; },
         players: new Map(), bestiary: [{name:"Ogre",hp:59,ac:11,modifier:1}],
-        openCombatant(creature: Creature) { (window as any).openedCombatant = creature.id; }
+        openCombatant(creature: Creature) { (window as any).openedCombatant = creature.id; },
+        attachCombatantDetails(creature: Creature, target: HTMLElement) {
+            (window as any).openedCombatant = creature.id;
+            target.textContent = `Statblock for ${creature.getName()}`;
+            return () => {};
+        }
     };
     plugin.app = { workspace: { trigger: (_name: string, state: unknown) => {
         plugin.data.state = state; void plugin.saveSettings();
@@ -54,7 +61,8 @@
     tracker.set([first, second]);
     setContext("plugin", plugin);
     let showDifficulty = false;
-    let showAdd = false, showSave = false, showPlayer = false;
+    let showAdd = false, showPlayer = false;
+    let library: "save" | "load" | null = null;
     const setDifficultyScenario = (levels: number[], xp: number, system = "dnd5e-55") => {
         plugin.data.rpgSystem = system;
         tracker.setData(plugin.data);
@@ -66,7 +74,7 @@
         showDifficulty = true;
     };
     (window as any).fixture = { tracker, first, second, plugin, log, get, recentColours,
-        dnd55DifficultyScale, systemDifficultyScale, getRpgSystem, setDifficultyScenario, Creature, sharesInitiative };
+        dnd55DifficultyScale, systemDifficultyScale, getRpgSystem, setDifficultyScenario, Creature, sharesInitiative, SyncedSettings };
     const builderMode = new URLSearchParams(location.search).has("builder");
     const catalogueGoblin = { name: "Goblin", hp: 30, ac: 14, cr: "1/4", xp: 50 };
     if (builderMode) {
@@ -97,16 +105,17 @@
     {#if builderMode}
         <div class="builder-fixture initiative-tracker encounter-builder markdown-rendered">
             <h2>Encounter Builder Beta</h2>
-            <PartyExperience />
-            <BuilderEncounter />
+            <BuilderLayout>
             <button on:click={() => encounter.add(catalogueGoblin)}>Add Goblin from bestiary</button>
             <div class="bestiary-test-scroll">
                 <table class="bestiary-test-table"><thead><tr>{#each $headers as header}
                     <th><button on:click={() => table.sort(header)}>{header.text}</button></th>
                 {/each}</tr></thead><tbody>{#each $bestiary as creature}<BestiaryCreature {creature} />{/each}</tbody></table>
             </div>
+            </BuilderLayout>
         </div>
     {:else}
+    <Controls on:save={() => library = 'save'} on:load={() => library = 'load'} on:add-creatures={() => showAdd = true} />
     {#if showDifficulty}<Metadata />{:else}<h2>Initiative Tracker Beta</h2>{/if}
     <table class="initiative-tracker-table"><thead><tr><th>Colour</th><th>Init</th><th>Name</th><th>HP</th><th>AC</th></tr></thead>
         <tbody>{#each $tracker as creature (creature.id)}
@@ -118,11 +127,12 @@
     {#key $updateSession}<Updating />{/key}
     {#if $quickHealth}{#key $quickHealth}<QuickHealth session={$quickHealth} />{/key}{/if}
     <button class="outside">Outside panel</button>
-    <button on:click={() => showAdd = true}>Test add combatant</button>
-    <button on:click={() => showSave = true}>Test save encounter</button>
     <button on:click={() => showPlayer = !showPlayer}>Test player view</button>
     {#if showAdd}<div class="test-add"><AddCombatant {plugin} on:close={() => showAdd = false} /></div>{/if}
-    {#if showSave}<SaveEncounter on:cancel={() => showSave = false} />{/if}
+    {#if library}
+        <EncounterLibrary mode={library} initialName="" getSnapshot={tracker.getEncounterState}
+            on:cancel={() => library = null} on:load={(event) => tracker.new(plugin, event.detail, {useSavedRoster:true})} />
+    {/if}
     {#if showPlayer}<div class="test-player"><PlayerView /></div>{/if}
     {/if}
 </main>

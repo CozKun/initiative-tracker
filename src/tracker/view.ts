@@ -2,9 +2,6 @@ import {
     debounce,
     ExtraButtonComponent,
     ItemView,
-    MarkdownRenderer,
-    parseLinktext,
-    resolveSubpath,
     WorkspaceLeaf
 } from "obsidian";
 import {
@@ -96,6 +93,7 @@ export class CreatureView extends ItemView {
     private currentCreatureId: string | null = null;
     private currentCreatureName: string | null = null;
     private bestiaryUnload: (() => void) | null = null;
+    private unmountDetails: (() => void) | null = null;
     constructor(leaf: WorkspaceLeaf, public plugin: InitiativeTracker) {
         super(leaf);
         this.load();
@@ -134,6 +132,8 @@ export class CreatureView extends ItemView {
             });
     }
     onunload(): void {
+        this.unmountDetails?.();
+        this.unmountDetails = null;
         if (this.bestiaryUnload) {
             this.bestiaryUnload();
             this.bestiaryUnload = null;
@@ -221,6 +221,8 @@ export class CreatureView extends ItemView {
         await super.setState(state, result);
     }
     async render(creature?: Creature) {
+        this.unmountDetails?.();
+        this.unmountDetails = null;
         this.currentCreatureId = creature?.id ?? null;
         this.currentCreatureName = creature?.name ?? null;
         this.statblockEl.empty();
@@ -231,69 +233,7 @@ export class CreatureView extends ItemView {
             return;
         }
 
-        if (
-            creature["statblock-link"] &&
-            (this.plugin.data.preferStatblockLink ||
-                !this.plugin.canUseStatBlocks)
-        ) {
-            await this.renderEmbed(creature.getStatblockLink());
-        } else if (this.plugin.canUseStatBlocks) {
-            const statblock = window.FantasyStatblocks.render(
-                creature.creature,
-                this.statblockEl,
-                creature.display
-            );
-            this.addChild(statblock);
-        } else {
-            this.statblockEl.createEl("em", {
-                text: "Install the TTRPG Statblocks plugin or add a statblock-link to your monster to use this feature!"
-            });
-        }
-    }
-
-    async renderEmbed(embedLink: string) {
-        if (
-            this.plugin.canUseStatBlocks &&
-            window.FantasyStatblocks.isStatblockLink?.(embedLink)
-        ) {
-            embedLink = window.FantasyStatblocks.parseStatblockLink(embedLink);
-        }
-        if (/\[.+\]\(.+\)/.test(embedLink)) {
-            //md
-            [, embedLink] = embedLink.match(/\[.+?\]\((.+?)\)/);
-        } else if (/\[\[.+\]\]/.test(embedLink)) {
-            //wiki
-            [, embedLink] = embedLink.match(/\[\[(.+?)(?:\|.+?)?\]\]/);
-        }
-
-        const { path, subpath } = parseLinktext(embedLink);
-
-        const file = this.app.metadataCache.getFirstLinkpathDest(path, "/");
-
-        let content = `Oops! Something is wrong with your statblock-link:<br />${embedLink}`;
-        if (file) {
-            const fileContent = await this.app.vault.cachedRead(file);
-            if (subpath && fileContent) {
-                const cache = this.app.metadataCache.getFileCache(file);
-                const subpathResult = resolveSubpath(cache, subpath);
-                if (subpathResult) {
-                    content = fileContent.slice(
-                        subpathResult.start.offset,
-                        subpathResult.end.offset
-                    );
-                }
-            } else if (fileContent) {
-                content = fileContent;
-            }
-        }
-
-        await MarkdownRenderer.render(
-            this.app,
-            content,
-            this.statblockEl.createDiv("markdown-rendered"),
-            path,
-            this
-        );
+        this.unmountDetails = this.plugin.attachCombatantDetails(creature, this.statblockEl, this);
     }
 
     getDisplayText(): string {

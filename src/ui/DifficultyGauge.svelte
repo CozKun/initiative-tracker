@@ -68,13 +68,16 @@
             <div class="difficulty-empty" /><small>{Number.isFinite(difficulty.value) ? "Add enabled players with supported levels." : "Check creature and party levels: this calculator cannot evaluate one or more entries."}</small>
         {/if}
 
-        {#if showDetails}<pre class="difficulty-calculation">{ready ? difficulty.summary : 'Check enabled party levels and supported creature data.'}</pre>{/if}
+        {#if showDetails}
+            <pre class="difficulty-calculation">{ready ? difficulty.summary : 'Check enabled party levels and supported creature data.'}</pre>
+            <slot name="details" />
+        {/if}
     </div>
 <style>
-    .difficulty-bands-container { box-sizing: border-box; width: 100%; padding: 0 0.5rem; margin-bottom: 0.65rem; }
+    .difficulty-bands-container { box-sizing: border-box; width: 100%; padding: 0 0.5rem; margin-bottom: 0.65rem; container-type:inline-size; }
     .difficulty-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem;
         align-items: baseline; margin-bottom: 0.45rem; font-size: var(--font-ui-small); }
-    .difficulty-caption span { color: var(--text-muted); }
+    .difficulty-caption span { color: var(--text-muted); margin-left:auto; }
     .difficulty-bands { display: flex; position: relative; width: 100%; height: 8px; border-radius: 4px; }
     .difficulty-band { display: block; border-right: 2px solid var(--background-primary); box-sizing: border-box; }
     .difficulty-band:first-child { border-radius: 4px 0 0 4px; }
@@ -86,7 +89,7 @@
     .difficulty-details-toggle { padding:0 4px; height:auto; min-height:0; font-size:var(--font-ui-smaller); }
     .difficulty-override { font-size:var(--font-ui-small);color:var(--text-normal); }
     .difficulty-calculation { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; font-size:var(--font-ui-small); }
-    @media (max-width: 600px) { .difficulty-legend.detailed { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
+    @container (max-width: 27rem) { .difficulty-legend.detailed { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
     [data-tier="Trivial"] { background: var(--text-faint, #8b8b8b); }
     [data-tier="Low"] { background: var(--color-green, #60a96a); }
     [data-tier="Moderate"] { background: var(--color-yellow, #d5a33b); }

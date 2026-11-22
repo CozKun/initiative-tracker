@@ -10,6 +10,7 @@ import { runCommunityChecks } from "./community-checks.mjs";
 import { runNextBuildChecks } from "./next-build-checks.mjs";
 import { runBuilderChecks } from "./builder-checks.mjs";
 import { runUatChecks } from "./uat-checks.mjs";
+import { runEncounterPersistenceChecks } from "./encounter-persistence-checks.mjs";
 
 const root = process.cwd();
 const out = path.join(root, "dist/beta-qa");
@@ -238,6 +239,7 @@ try {
     await runNextBuildChecks(page, `http://127.0.0.1:${server.address().port}`, out, check);
     await runCommunityChecks(page, browser, `http://127.0.0.1:${server.address().port}`, out, check);
     await runUatChecks(page, `http://127.0.0.1:${server.address().port}`, check);
+    await runEncounterPersistenceChecks(page, `http://127.0.0.1:${server.address().port}`, check);
     assert.deepEqual(errors,[]); check("no browser runtime errors");
     console.log(`${checks} beta interaction checks passed. Screenshots: ${out}`);
 } catch (error) {

@@ -14,6 +14,12 @@ export function getId() {
     });
 }
 
+export function playerIdentity(player: HomebrewCreature): string {
+    return player.builderPlaceholder || !player.name?.trim()
+        ? `id:${player.id}`
+        : `name:${player.name.trim().toLowerCase()}`;
+}
+
 export class Creature {
     active: boolean;
     name: string;
@@ -32,6 +38,7 @@ export class Creature {
     current_max: number;
     level: number;
     player: boolean;
+    builderPlaceholder?: boolean;
     status: Set<Condition> = new Set();
     autoUnconsciousName?: string;
     marker: string;
@@ -97,6 +104,7 @@ export class Creature {
         this.note = creature.note;
         this.level = creature.level;
         this.player = creature.player;
+        this.builderPlaceholder = creature.builderPlaceholder;
 
         this.rollHP = creature.rollHP;
 
@@ -255,6 +263,7 @@ export class Creature {
             enabled: this.enabled,
             level: this.level,
             player: this.player,
+            builderPlaceholder: this.builderPlaceholder,
             xp: this.xp,
             active: this.active,
             hidden: this.hidden,
@@ -266,15 +275,10 @@ export class Creature {
     }
 
     static fromJSON(state: CreatureState, plugin: InitiativeTracker) {
-        let creature: Creature;
-        if (state.player) {
-            creature =
-                plugin.getPlayerByName(state.name) ??
-                new Creature(state, state.initiative);
-            creature.initiative = state.initiative;
-        } else {
-            creature = new Creature(state, state.initiative);
-        }
+        const source = state.player && !state.builderPlaceholder
+            ? plugin.getPlayerByName(state.name)
+            : undefined;
+        const creature = new Creature({ ...source?.creature, ...state }, state.initiative);
         creature.enabled = state.enabled;
 
         creature.temp = state.tempHP ? state.tempHP : 0;
@@ -282,7 +286,7 @@ export class Creature {
         creature.hp = state.currentHP;
         creature.current_ac = state.currentAC;
         let statuses: Condition[] = [];
-        for (const status of state.status) {
+        for (const status of state.status ?? []) {
             const existing = Conditions.find(({ name }) => status == name);
             if (existing) {
                 statuses.push(existing);
