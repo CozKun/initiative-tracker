@@ -6,12 +6,12 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### 13.0.24
 
+* **Encounter difficulty across systems:** The builder and tracker use labelled bands and calculator-specific units for D&D 5e, D&D 5.5e (2024), Lazy GM, CR2.0 Simple, Flee, Mortals! and Pathfinder 2e. The builder shows how far the encounter is from each neighbouring bracket. Fixes include Pathfinder 2e's Low budget adjustment for party size, CR2.0 fractional CR lookups, and Flee, Mortals! creature CR-cap reporting.
 * **Touch controls:** Quick HP, initiative, AC adjustments, effect values and combatant stats use a shared keypad on touch devices. Creature actions sit beside the name on touch, and desktop users can open them by right-click or Shift+F10. Long names wrap and stay left aligned.
 * **Apply Effect:** Group healing supports individual amounts. Browse standard conditions and open or switch target statblocks inside the panel while keeping your draft. The statblock pane's close button now closes the pane.
 * **Saved encounters:** Tracker and builder share a searchable library, with overwrite and deletion confirmation. The Save window opens centrally on desktop and higher on touch screens. The tracker reads incoming saved encounters while Obsidian is open and preserves changes to different encounters when saving.
 * **Party and initiative:** The builder carries its chosen roster and colours into the tracker. Excluded players stay out, and planning groups create temporary players only when selected. Shared initiative keeps coloured copies on the same roll while keeping individual rows. Switching the tracker party preserves the combat state of players who remain, and manual initiative accepts zero.
 * **Table play:** Add enemies, allies and players directly to an encounter. Player View shows Mini Colour Indicators. The optional Unconscious recovery setting clears the tracker-applied condition when a creature heals from zero HP.
-* **Difficulty:** All six encounter calculators have labelled bands, system-specific units and calculation details. Fixed several threshold, fractional CR, and zero-value cases. See the README for calculator and device coverage.
 
 ### 13.0.24-beta.2 — 2026-09-26 (beta only)
 

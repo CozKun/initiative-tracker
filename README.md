@@ -1,6 +1,6 @@
 # Initiative Tracker — Community Edition
 
-A community fork of Initiative Tracker for **[Obsidian](https://obsidian.md)**, maintained by **[CozKun](https://github.com/CozKun)** and focused on running combat at the table: quick HP changes, clearer encounter planning and colour indicators for telling your miniatures apart.
+A community fork of Initiative Tracker for **[Obsidian](https://obsidian.md)**, maintained by **[Coz](https://github.com/CozKun)** and focused on running combat at the table: quick HP changes, clearer encounter planning and colour indicators for telling your miniatures apart.
 
 **[Download the latest release](https://github.com/CozKun/initiative-tracker/releases/latest)** · **[Changelog](CHANGELOG.md)** · **[Report an issue](https://github.com/CozKun/initiative-tracker/issues)**
 
@@ -34,15 +34,19 @@ This is an independently maintained fork, not an official release or endorsement
 
 See the [changelog](CHANGELOG.md) for the full history. Release numbering continues the upstream version line.
 
-## Device and calculator coverage
+## Encounter calculators
 
-The 13.0.24 beta passed targeted checks in desktop Obsidian and on an Android tablet. Automated checks exercise narrow layouts, touch controls and keyboard viewport changes. Native iOS and iPadOS coverage is still open.
+In the plugin settings, choose **Encounter difficulty system**. The builder and tracker support D&D 5e, D&D 5.5e (2024), Lazy GM, CR2.0 Simple, Flee, Mortals! and Pathfinder 2e. Combat rules are adjudicated at the table.
 
-Supported encounter calculators are D&D 5e, D&D 5.5e, Lazy GM, CR2.0 Simple, Flee, Mortals! and Pathfinder 2e. Combat rules are adjudicated at the table.
+Automated tests cover switching between all six calculators, reference encounter totals, unit labels and bracket boundaries. The Pathfinder 2e fixtures also cover party-size adjustments and a saved 120 XP encounter.
 
 * PF2e uses the rounded average for mixed-level parties and supports creature XP within four levels of that party level. Hazards and variant rules remain outside the verified cases for this release.
 * Flee, Mortals! retains the existing minion-group rounding and estimated Extreme budget. Partial minion groups and custom statblock persistence need more coverage.
 * CR2.0 decimal CR values now match their fractional equivalents. Testing covers selected table values and boundaries.
+
+## Device coverage
+
+The 13.0.24 beta passed targeted checks in desktop Obsidian and on an Android tablet. Automated checks exercise narrow layouts, touch controls and keyboard viewport changes. Native iOS and iPadOS coverage is still open.
 
 ## Install manually
 
@@ -82,7 +86,7 @@ To carry beta settings and encounters over, back up both plugin folders, close O
 
 Open the encounter builder, configure your party, add creatures and assign colours to individual copies. Start the encounter when ready. In the tracker, select HP for quick damage or healing. Open creature actions with right-click on desktop or the dots on a touch screen.
 
-Choose an RPG system in the plugin settings to use that calculator's difficulty bands and units.
+Choose **Encounter difficulty system** in the plugin settings to use that calculator's difficulty bands and units.
 
 You can also launch encounters from a note:
 
