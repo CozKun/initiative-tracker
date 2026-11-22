@@ -1,6 +1,6 @@
-import { visibleViewport } from "./viewport";
+import { prefersTouchInput, visibleViewport } from "./viewport";
 /** Non-modal panel: remains open while the user opens statblocks elsewhere. */
-export function floatingPanel(node: HTMLElement) {
+export function floatingPanel(node: HTMLElement, { centred = false } = {}) {
     const doc = node.ownerDocument;
     const win = doc.defaultView!;
     const previousFocus = doc.activeElement as HTMLElement;
@@ -12,9 +12,10 @@ export function floatingPanel(node: HTMLElement) {
         const viewport = visibleViewport(win);
         node.style.maxWidth = `${Math.max(0, viewport.width - 16)}px`;
         node.style.maxHeight = `${Math.max(0, viewport.height - 16)}px`;
-        if (win.matchMedia("(pointer: coarse)").matches) {
+        if (prefersTouchInput(win) || centred) {
             left = viewport.left + Math.max(8, (viewport.width - node.offsetWidth) / 2);
-            top = Math.max(viewport.top + 8, viewport.bottom - node.offsetHeight - 8);
+            const space = Math.max(8, (viewport.height - node.offsetHeight) / 2);
+            top = viewport.top + (prefersTouchInput(win) ? Math.min(48, space) : space);
         } else {
             left = Math.max(viewport.left + 8, Math.min(left ?? viewport.right - node.offsetWidth - 16, viewport.right - node.offsetWidth - 8));
             top = Math.max(viewport.top + 8, Math.min(top, viewport.bottom - node.offsetHeight - 8));

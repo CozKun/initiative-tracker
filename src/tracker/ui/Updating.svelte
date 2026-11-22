@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getContext } from "svelte";
+    import { getContext, onMount } from "svelte";
     import type InitiativeTracker from "src/main";
     import { tracker } from "../stores/tracker";
     import { getId } from "src/utils/creature";
@@ -8,12 +8,17 @@
     import { isValidHpMultiplier } from "src/utils/hp-multiplier";
     import { floatingPanel } from "./floating-panel";
     import { accessibleName } from "src/ui/tooltip";
+    import NumberEntry from "src/ui/NumberEntry.svelte";
+    import { prefersTouchInput } from "./viewport";
     const plugin = getContext<InitiativeTracker>("plugin");
     const { updating, updateTarget, updateSession, ordered } = tracker;
     let mode = $updateSession?.focusConditions ? 'conditions' : 'damage';
     let damage = '', ac = '', status = '', statuses: Condition[] = [];
     let choosingTargets = false, perTarget = false, maxDirection = 'increase', tempDirection = 'add', conditionAction = 'add';
     let statblock: Creature | null = null;
+    let panel: HTMLElement;
+    let touch = false, choosingCondition = false, customCondition = false;
+    onMount(() => { touch = prefersTouchInput(panel?.ownerDocument.defaultView ?? window); });
     const mountStatblock = (node: HTMLElement, creature: Creature) => ({ destroy: plugin.attachCombatantDetails(creature, node) });
     const multiplierHelp = 'Multiplies damage or healing for this creature: 1 = normal, 2 = double, 0.5 = half, 0 = none. Saved and Resist halve damage only. Does not change temporary HP or prevent conditions.';
     const validAmount = (value: string) => value.trim() !== '' && Number.isFinite(Number(value)) && Number(value) >= 0;
@@ -28,11 +33,18 @@
         for (const entry of $updating.values()) { entry.saved = false; entry.resist = false; entry.customMod = '1'; entry.amount = ''; }
         $updating = $updating;
     }
-    function addStatus() {
-        if (!status.trim()) return;
-        const item = plugin.data.statuses.find(s => s.name === status.trim()) ?? { name: status.trim(), id: getId(), description: '' };
+    $: amountLabel = mode === 'heal' ? 'Heal each target for' : mode === 'damage' ? 'Damage per target'
+        : mode === 'temp' ? 'Temporary HP per target' : 'Maximum HP change per target';
+    const acLabel = "Set AC, or use +/− to adjust";
+    function addStatus(name = status) {
+        if (!name.trim()) return;
+        const item = plugin.data.statuses.find(s => s.name === name.trim()) ?? { name: name.trim(), id: getId(), description: '' };
         if (!statuses.some(s => s.name === item.name)) statuses = [...statuses, item];
         status = '';
+    }
+    function chooseStatus(name: string) {
+        addStatus(name);
+        choosingCondition = false;
     }
     function apply() {
         if (invalidMultiplier || invalidAmount || invalidOverrides) return;
@@ -55,7 +67,7 @@
     }
 </script>
 {#if $updating.size}
-<div class="coz-tracker-panel effect-panel" role="dialog" aria-modal="false" use:accessibleName={"Apply effect"} use:floatingPanel on:keydown={escape}>
+<div class="coz-tracker-panel effect-panel" role="dialog" aria-modal="false" bind:this={panel} use:accessibleName={"Apply effect"} use:floatingPanel on:keydown={escape}>
     <header class="effect-heading"><strong>{$updateTarget === 'hp' ? 'Apply effect' : 'Armour class'} · {$updating.size} {$updating.size === 1 ? 'target' : 'targets'}</strong>
         <button type="button" aria-expanded={!!statblock} on:click={() => statblock = statblock ? null : $updating.keys().next().value}>Statblocks</button>
         <button class="panel-drag" type="button" aria-label="Move effect panel">Move</button>
@@ -72,21 +84,40 @@
             <button type="button" aria-pressed={mode === value} on:click={() => setMode(value)}>{label}</button>{/each}</nav>
         <div class="updating-hp">
             {#if mode !== 'conditions'}
-                <label>{mode === 'heal' ? 'Heal each target for' : mode === 'damage' ? 'Damage per target' : mode === 'temp' ? 'Temporary HP per target' : 'Maximum HP change per target'}
-                    <input type="text" inputmode="decimal" autocomplete="off" bind:value={damage} on:keydown={(e) => { if (e.key === 'Enter') apply(); }} />
-                </label>
+                <NumberEntry label={amountLabel} value={damage} decimal min={0} allowEmpty on:set={(event) => damage = event.detail}>
+                    <input type="text" inputmode="decimal" aria-label={amountLabel} autocomplete="off" bind:value={damage} on:keydown={(e) => { if (e.key === 'Enter') apply(); }} />
+                </NumberEntry>
                 {#if mode === 'max'}<label>Direction<select bind:value={maxDirection}><option value="increase">Increase</option><option value="decrease">Decrease</option></select></label>{/if}
                 {#if mode === 'heal'}<label class="inline"><input type="checkbox" bind:checked={perTarget} />Set individual healing amounts</label>{/if}
                 {#if mode === 'temp'}<label>Temporary HP action<select aria-label="Temporary HP action" bind:value={tempDirection}><option value="add">Grant temporary HP</option><option value="remove">Remove temporary HP</option></select></label><small>Uses your existing temporary HP stacking setting.</small>{/if}
             {/if}
-            <div class="input-status"><label>Condition<input type="text" list="coz-effect-conditions" bind:value={status} on:keydown={(e) => { if(e.key === 'Enter') { e.preventDefault(); addStatus(); } }} /></label>
-                <datalist id="coz-effect-conditions">{#each plugin.data.statuses as condition}<option value={condition.name} />{/each}</datalist>
-                <button type="button" on:click={addStatus} disabled={!status.trim()}>Add to effect</button>
-            </div>
+            {#if touch}
+                <div class="condition-tools">
+                    <button type="button" aria-expanded={choosingCondition} on:click={() => { choosingCondition = !choosingCondition; customCondition = false; }}>Choose condition</button>
+                    <button type="button" aria-expanded={customCondition} on:click={() => { customCondition = !customCondition; choosingCondition = false; }}>Custom condition</button>
+                </div>
+                {#if choosingCondition}
+                    <div class="condition-choices" role="group" use:accessibleName={"Available conditions"}>
+                        {#each plugin.data.statuses as condition}
+                            <button type="button" disabled={statuses.some((item) => item.name === condition.name)} on:click={() => chooseStatus(condition.name)}>{condition.name}</button>
+                        {/each}
+                    </div>
+                {/if}
+            {/if}
+            {#if !touch || customCondition}
+                <div class="input-status"><label>Condition<input type="text" list={touch ? undefined : "coz-effect-conditions"} bind:value={status} on:keydown={(e) => { if(e.key === 'Enter') { e.preventDefault(); addStatus(); } }} /></label>
+                    {#if !touch}<datalist id="coz-effect-conditions">{#each plugin.data.statuses as condition}<option value={condition.name} />{/each}</datalist>{/if}
+                    <button type="button" on:click={() => addStatus()} disabled={!status.trim()}>Add to effect</button>
+                </div>
+            {/if}
             {#if statuses.length}<label>Conditions<select aria-label="Conditions" bind:value={conditionAction}><option value="add">Apply selected conditions</option><option value="remove">Remove selected conditions</option></select></label>
                 <div class="condition-list">{#each statuses as condition}<button type="button" on:click={() => statuses = statuses.filter(s => s !== condition)}>{condition.name} ×</button>{/each}</div>{/if}
         </div>
-    {:else}<label>Set AC, or use +/− to adjust<input type="text" bind:value={ac} on:keydown={(e) => { if (e.key === 'Enter') apply(); }} /></label>{/if}
+    {:else}
+        <NumberEntry label={acLabel} value={ac} sign="both" allowEmpty on:set={(event) => ac = event.detail}>
+            <input type="text" aria-label={acLabel} bind:value={ac} on:keydown={(e) => { if (e.key === 'Enter') apply(); }} />
+        </NumberEntry>
+    {/if}
     <div class="target-table-scroll"><table class="updating-creature-table"><thead><tr><th>Name / statblock</th>
         {#if showSaved}<th>Saved</th>{/if}{#if showResist}<th>Resist</th>{/if}{#if showMultiplier}<th title={multiplierHelp}>Multiplier (×)</th>{/if}{#if mode === 'heal' && perTarget}<th>Heal HP</th>{/if}<th></th></tr></thead>
         <tbody>{#each [...$updating.entries()] as [creature, update] (creature.id)}<tr>
@@ -94,10 +125,16 @@
                 {#if creature.baseColor}<span class="target-colour" style:background-color={creature.baseColor} />{/if}{creature.getName()} <span class="statblock-action" aria-hidden="true">Statblock</span></button></td>
             {#if showSaved}<td data-field="Saved"><input type="checkbox" aria-label={`Saved: ${creature.getName()}`} bind:checked={update.saved} /></td>{/if}
             {#if showResist}<td data-field="Resist"><input type="checkbox" aria-label={`Resist: ${creature.getName()}`} bind:checked={update.resist} /></td>{/if}
-            {#if showMultiplier}<td data-field="Multiplier"><input type="number" min="0" step="any" title={multiplierHelp} aria-label={`HP multiplier for ${creature.getName()}`} value={update.customMod}
+            {#if showMultiplier}<td data-field="Multiplier"><NumberEntry label={`HP multiplier for ${creature.getName()}`} value={update.customMod} showLabel={false} decimal min={0}
+                    on:set={(event) => { update.customMod = event.detail; $updating = $updating; }}>
+                <input type="number" min="0" step="any" title={multiplierHelp} aria-label={`HP multiplier for ${creature.getName()}`} value={update.customMod}
                     on:input={(e) => { update.customMod = e.currentTarget.value; $updating = $updating; }}
-                    on:keydown={(e) => { if(e.key === 'Escape') { e.stopPropagation(); update.customMod = '1'; $updating = $updating; } }} /></td>{/if}
-            {#if mode === 'heal' && perTarget}<td data-field="Heal HP"><input type="text" inputmode="decimal" aria-label={`Healing for ${creature.getName()}`} placeholder={damage || '0'} bind:value={update.amount} /></td>{/if}
+                    on:keydown={(e) => { if(e.key === 'Escape') { e.stopPropagation(); update.customMod = '1'; $updating = $updating; } }} />
+            </NumberEntry></td>{/if}
+            {#if mode === 'heal' && perTarget}<td data-field="Heal HP"><NumberEntry label={`Healing for ${creature.getName()}`} value={update.amount} showLabel={false} decimal min={0}
+                    allowEmpty placeholder={damage || '0'} on:set={(event) => update.amount = event.detail}>
+                <input type="text" inputmode="decimal" aria-label={`Healing for ${creature.getName()}`} placeholder={damage || '0'} bind:value={update.amount} />
+            </NumberEntry></td>{/if}
             <td class="target-remove"><button type="button" aria-label={`Remove target ${creature.getName()}`} on:click={() => tracker.setUpdate(creature)}>×</button></td>
         </tr>{/each}</tbody></table></div>
     {#if showMultiplier}<small class="multiplier-help">Multiplier: 1 normal · 2 double · 0.5 half · 0 no HP change.</small>{/if}
@@ -118,7 +155,8 @@
 </div>
 {/if}
 <style>
-.effect-panel { width: 560px; } .effect-modes,.condition-list { display:flex;flex-wrap:wrap;gap:4px; }
+.effect-panel { width: 560px; } .effect-modes,.condition-list,.condition-tools { display:flex;flex-wrap:wrap;gap:4px; }
+.condition-choices { display:grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,8rem),1fr)); gap:0.3rem; max-height:11rem; overflow:auto; }
 .effect-fields { display:flex; flex-direction:column; gap:8px; }
 .effect-fields[hidden] { display:none; }
 .statblock-pane { display:grid; align-content:start; gap:0.6rem; }

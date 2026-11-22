@@ -79,6 +79,7 @@
 >
     <Initiative
         initiative={creature.initiative}
+        creatureName={name}
         modifier={[creature.modifier].flat().reduce((a, b) => a + b, 0)}
         on:click={(e) => e.stopPropagation()}
         on:initiative={(e) => {
@@ -179,6 +180,7 @@
         line-height:1.3;
         font-size:var(--font-ui-small, 0.875rem);
         color:inherit;
+        justify-content:flex-start;
         text-align:left;
     }
     .centered-icon {

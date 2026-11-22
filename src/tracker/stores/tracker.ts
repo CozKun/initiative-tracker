@@ -159,7 +159,7 @@ function createTracker() {
         ...updates: CreatureUpdates[]
     ) => {
         for (const { creature, change } of updates) {
-            if (change.initiative) {
+            if (Number.isFinite(change.initiative)) {
                 creature.initiative = Number(change.initiative);
                 logNewInitiative(creature);
             }
@@ -1153,7 +1153,7 @@ class Tracker {
         ...updates: CreatureUpdates[]
     ) {
         for (const { creature, change } of updates) {
-            if (change.initiative) {
+            if (Number.isFinite(change.initiative)) {
                 creature.initiative = Number(change.initiative);
                 this.tryLog(
                     `${creature.getName()} initiative changed to ${

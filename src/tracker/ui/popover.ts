@@ -3,12 +3,13 @@ import { visibleViewport } from "./viewport";
 export function popover(node: HTMLElement, options: {
     anchor: HTMLElement;
     close: () => void;
-    placement?: "side";
+    placement?: "side" | "top";
 }) {
     const { anchor, close } = options;
     const doc = anchor.ownerDocument;
     const win = doc.defaultView!;
-    doc.body.appendChild(node);
+    const host = node.closest(".modal-container") ?? doc.body;
+    host.appendChild(node);
 
     const position = () => {
         if (!anchor.isConnected) return close();
@@ -18,6 +19,11 @@ export function popover(node: HTMLElement, options: {
         node.style.maxHeight = `${Math.max(0, viewport.height - 16)}px`;
         const table = anchor.closest("table")?.getBoundingClientRect() ?? bounds;
         const { width, height } = node.getBoundingClientRect();
+        if (options.placement === "top") {
+            node.style.left = `${viewport.left + Math.max(8, (viewport.width - width) / 2)}px`;
+            node.style.top = `${viewport.top + Math.max(8, Math.min(48, (viewport.height - height) / 2))}px`;
+            return;
+        }
         if (options.placement === "side") {
             if (bounds.right + width + 16 <= viewport.right || bounds.left - width - 8 >= viewport.left + 8) {
                 node.style.left = `${bounds.right + width + 16 <= viewport.right ? bounds.right + 8 : bounds.left - width - 8}px`;

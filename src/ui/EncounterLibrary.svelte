@@ -49,7 +49,7 @@
         finally { busy = false; }
     }
 </script>
-<div class="coz-tracker-panel library-panel" role="dialog" aria-modal="false" use:accessibleName={title} use:floatingPanel
+<div class="coz-tracker-panel library-panel" role="dialog" aria-modal="false" use:accessibleName={title} use:floatingPanel={{centred: true}}
     on:keydown={(event) => { if (event.key === 'Escape' && !busy) { event.stopPropagation(); dispatch('cancel'); } }}>
     <header><strong>{title}</strong><button type="button" aria-label="Close encounter library" disabled={busy} on:click={() => dispatch('cancel')}>×</button></header>
     {#if mode === 'save'}

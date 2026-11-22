@@ -5,6 +5,7 @@
     import { Creature } from 'src/utils/creature';
     import { sharesInitiative } from 'src/utils/shared-initiative';
     import { tracker } from '../../stores/tracker';
+    import NumberEntry from 'src/ui/NumberEntry.svelte';
     export let plugin: InitiativeTracker;
     setContext('plugin', plugin);
     const dispatch = createEventDispatcher();
@@ -53,10 +54,34 @@
     <label>{role === 'player' ? 'Search saved players' : 'Search bestiary'}<input type="search" bind:value={query} placeholder="Search, or enter details below" /></label>
     {#if query.trim()}<div class="search-results">{#each matches as item}<button type="button" on:click={() => choose(item)}>{item.name}</button>{:else}<small>No matches. Enter a name and stats below.</small>{/each}</div>{/if}
     <label>Name<input bind:value={name} required /></label>
-    <div class="fields"><label>HP<input type="number" min="0" step="any" bind:value={hp} required /></label><label>AC<input bind:value={ac} required /></label>
-    {#if role === 'player'}<label>Level<input type="number" min="1" bind:value={level} /></label>{:else}<label>Quantity<input type="number" min="1" max="1000" bind:value={quantity} /></label>{/if}</div>
-    <div class="fields"><label>Initiative modifier<input bind:value={modifier} /></label><label>Initiative method<select aria-label="Initiative method" bind:value={rollMode}><option value="manual">Enter manually</option><option value="roll">Roll initiative</option></select></label></div>
-    {#if rollMode === 'manual'}<label>Initiative<input type="number" step="any" bind:value={initiative} required /></label>{:else}<small>Only the new combatants are rolled. With shared initiative enabled, matching creatures join their existing initiative.</small>{/if}
+    <div class="fields">
+        <NumberEntry label="HP" value={hp} decimal min={0} on:set={(event) => hp = event.detail}>
+            <input aria-label="HP" type="number" min="0" step="any" bind:value={hp} required />
+        </NumberEntry>
+        <NumberEntry label="AC" value={ac} decimal sign="minus" allowText on:set={(event) => ac = event.detail}>
+            <input aria-label="AC" bind:value={ac} required />
+        </NumberEntry>
+        {#if role === 'player'}
+            <NumberEntry label="Level" value={level} min={1} on:set={(event) => level = event.detail}>
+                <input aria-label="Level" type="number" min="1" bind:value={level} />
+            </NumberEntry>
+        {:else}
+            <NumberEntry label="Quantity" value={quantity} min={1} max={1000} on:set={(event) => quantity = event.detail}>
+                <input aria-label="Quantity" type="number" min="1" max="1000" bind:value={quantity} />
+            </NumberEntry>
+        {/if}
+    </div>
+    <div class="fields">
+        <NumberEntry label="Initiative modifier" value={modifier} decimal sign="minus" allowText on:set={(event) => modifier = event.detail}>
+            <input aria-label="Initiative modifier" bind:value={modifier} />
+        </NumberEntry>
+        <label>Initiative method<select aria-label="Initiative method" bind:value={rollMode}><option value="manual">Enter manually</option><option value="roll">Roll initiative</option></select></label>
+    </div>
+    {#if rollMode === 'manual'}
+        <NumberEntry label="Initiative" value={initiative} decimal sign="minus" on:set={(event) => initiative = event.detail}>
+            <input aria-label="Initiative" type="number" step="any" bind:value={initiative} required />
+        </NumberEntry>
+    {:else}<small>Only the new combatants are rolled. With shared initiative enabled, matching creatures join their existing initiative.</small>{/if}
     <details><summary>More options</summary><label class="inline"><input type="checkbox" bind:checked={hidden} />Hidden from player view</label><label class="inline"><input type="checkbox" bind:checked={fixed} />Keep initiative fixed when rerolling</label>
     {#if plugin.canUseDiceRoller}<label class="inline"><input type="checkbox" bind:checked={rollHP} />Roll HP from available hit dice</label>{/if}</details>
     {#if error}<p role="alert">{error}</p>{/if}

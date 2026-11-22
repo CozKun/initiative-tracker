@@ -16,6 +16,8 @@
     import type { Writable } from "svelte/store";
     import { equivalent } from "src/encounter";
     import { confirmWithModal } from "./modal";
+    import NumberEntry from "src/ui/NumberEntry.svelte";
+    import { prefersTouchInput } from "../viewport";
 
     let creature: Creature = new Creature({});
     export let amount = 1;
@@ -36,6 +38,16 @@
     }
 
     let modifier = JSON.stringify(creature.modifier ?? 0);
+    function updateModifier(value: string) {
+        modifier = value;
+        if (!isEditing) return;
+        try {
+            const parsed = JSON.parse(value);
+            if (Number.isFinite(parsed) || (Array.isArray(parsed) && parsed.length && parsed.every(Number.isFinite))) {
+                creature.modifier = parsed;
+            }
+        } catch { /* The text can be incomplete while typing. */ }
+    }
     const prior = modifier;
     const saveButton = (node: HTMLElement) => {
         new ExtraButtonComponent(node)
@@ -177,7 +189,7 @@
     onMount(() => {
         if (isEditing) {
             setImmediate(() => {
-                displayNameInput.focus();
+                if (displayNameInput?.isConnected && !prefersTouchInput(displayNameInput.ownerDocument.defaultView)) displayNameInput.focus();
                 createModal();
             });
         } else {
@@ -219,14 +231,15 @@
             />
         </div>
         <div>
-            <label for="add-hp">HP</label>
+            <label for="add-hp">HP</label><NumberEntry label="HP" value={creature.hp} showLabel={false} decimal min={0}
+                on:set={(event) => creature.hp = Number(event.detail)}>
             <input
                 bind:value={creature.hp}
                 id="add-hp"
                 type="number"
                 name="hp"
                 tabindex="0"
-            />
+            /></NumberEntry>
         </div>
         <div>
             <label for="hit-dice">Hit Dice</label>
@@ -239,7 +252,8 @@
             />
         </div>
         <div>
-            <label for="add-ac">AC</label>
+            <label for="add-ac">AC</label><NumberEntry label="AC" value={creature.ac} showLabel={false} decimal sign="minus" allowText
+                on:set={(event) => { creature.ac = event.detail; creature.dirty_ac = true; }}>
             <input
                 bind:value={creature.ac}
                 on:change={() => (creature.dirty_ac = true)}
@@ -247,28 +261,30 @@
                 name="ac"
                 type="text"
                 tabindex="0"
-            />
+            /></NumberEntry>
         </div>
         <div>
-            <label for="add-mod">Modifier</label>
+            <label for="add-mod">Modifier</label><NumberEntry label="Modifier" value={modifier} showLabel={false} decimal sign="minus" allowText
+                on:set={(event) => updateModifier(event.detail)}>
             <input
-                bind:value={modifier}
+                value={modifier} on:input={(event) => updateModifier(event.currentTarget.value)}
                 id="add-mod"
                 type="text"
                 name="add-mod"
                 tabindex="0"
-            />
+            /></NumberEntry>
         </div>
 
         <div class="initiative">
-            <label for="add-init">Initiative</label>
+            <label for="add-init">Initiative</label><NumberEntry label="Initiative" value={creature.initiative} showLabel={false} decimal sign="minus"
+                on:set={(event) => creature.initiative = Number(event.detail)}>
             <input
                 bind:value={creature.initiative}
                 id="add-init"
                 type="number"
                 name="initiative"
                 tabindex="0"
-            />
+            /></NumberEntry>
             <div class="dice" use:diceButton />
         </div>
 
@@ -288,14 +304,15 @@
         {/key}
 
         <div class="amount">
-            <label for="add-init">Amount</label>
+            <label for="add-amount">Amount</label><NumberEntry label="Amount" value={amount} showLabel={false} min={1}
+                on:set={(event) => amount = Number(event.detail)}>
             <input
                 bind:value={amount}
-                id="add-init"
+                id="add-amount"
                 type="number"
                 name="initiative"
                 tabindex="0"
-            />
+            /></NumberEntry>
         </div>
     </div>
     {#if !isEditing && !Platform.isMobile}

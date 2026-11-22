@@ -1,7 +1,8 @@
 <script lang="ts">
     import { tooltip, accessibleName } from "src/ui/tooltip";
     import { onMount } from "svelte";
-    import { Platform } from "obsidian";
+    import NumberPad from "src/ui/NumberPad.svelte";
+    import { prefersTouchInput } from "./viewport";
     import type { Creature } from "src/utils/creature";
     import { tracker } from "../stores/tracker";
     import { popover } from "./popover";
@@ -11,25 +12,20 @@
     let heal = false;
     let input: HTMLInputElement;
     let panel: HTMLElement;
-    const touch = Platform.isMobile || session.anchor.ownerDocument.defaultView?.matchMedia("(pointer: coarse)").matches;
-    const digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    let keypad: NumberPad;
+    const touch = prefersTouchInput(session.anchor.ownerDocument.defaultView);
     $: valid = /^\d+$/.test(amount) && Number.isSafeInteger(Number(amount)) && Number(amount) > 0;
     const close = () => tracker.quickHealth.set(null);
     const apply = () => {
         if (valid) tracker.applyQuickHealth(Number(amount), heal);
     };
-    function enterDigit(digit: string) {
-        const next = (amount + digit).replace(/^0+(?=\d)/, "");
-        if (Number.isSafeInteger(Number(next))) amount = next;
-    }
     function keypadKeys(event: KeyboardEvent) {
         if (!touch || event.altKey || event.ctrlKey || event.metaKey) return;
-        if (/^\d$/.test(event.key)) enterDigit(event.key);
-        else if (event.key === "Backspace") amount = amount.slice(0, -1);
-        else if (event.key === "Enter" && event.target === panel) apply();
-        else return;
-        event.preventDefault();
-        event.stopPropagation();
+        if (event.key === "Enter" && event.target === panel) {
+            event.preventDefault();
+            event.stopPropagation();
+            apply();
+        } else keypad?.keydown(event);
     }
     onMount(() => {
         if (touch) panel.focus({ preventScroll: true });
@@ -64,14 +60,7 @@
         <button type="submit" class="mod-cta" disabled={!valid}>{heal ? "Heal" : "Damage"}</button>
     </form>
     {#if touch}
-        <div class="keypad" role="group" use:accessibleName={"Health keypad"}>
-            {#each digits as digit}
-                <button type="button" on:click={() => enterDigit(digit)}>{digit}</button>
-            {/each}
-            <button type="button" on:click={() => amount = ""} disabled={!amount}>Clear</button>
-            <button type="button" on:click={() => enterDigit("0")}>0</button>
-            <button type="button" aria-label="Delete last digit" on:click={() => amount = amount.slice(0, -1)} disabled={!amount}>⌫</button>
-        </div>
+        <div class="keypad"><NumberPad bind:this={keypad} bind:value={amount} label="Health keypad" /></div>
     {/if}
     <button type="button" class="effect-link" on:click={() => tracker.openEffect(session.creature)}>Apply effect…</button>
 </section>
@@ -97,8 +86,7 @@
         padding: 0.2rem 0.55rem; font-weight: 600; font-variant-numeric: tabular-nums;
         background: var(--background-secondary); border-radius: var(--radius-s); }
     .touch button { min-height: 44px; }
-    .keypad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.3rem; margin-top: 0.65rem; }
-    .keypad button { min-width: 0; font-size: 1rem; padding-inline: 0.25rem; }
+    .keypad { margin-top:0.65rem; }
     .effect-link { margin-top: 0.6rem; padding: 0; height: auto; box-shadow: none;
         background: transparent; color: var(--text-muted); font-size: var(--font-ui-small); }
 </style>

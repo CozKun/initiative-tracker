@@ -96,6 +96,11 @@ export async function runBuilderChecks(page, url, out, check) {
     check('clearing colours works; hidden enemies count, allies do not, and bestiary data stays unchanged');
 
     await page.getByRole('button',{name:'Save this encounter and its Mini Colour Indicators',exact:true}).click();
+    const saveDialog = page.getByRole('dialog',{name:'Save encounter',exact:true});
+    const saveBounds = await saveDialog.boundingBox();
+    const viewport = page.viewportSize();
+    assert.ok(Math.abs(saveBounds.x + saveBounds.width / 2 - viewport.width / 2) < 2);
+    assert.ok(Math.abs(saveBounds.y + saveBounds.height / 2 - viewport.height / 2) < 2);
     await page.getByRole('dialog').locator('input').fill('Colour test');
     await page.getByRole('dialog',{name:'Save encounter'}).getByRole('button',{name:'Save encounter',exact:true}).click();
     await page.getByRole('dialog',{name:'Save encounter'}).waitFor({state:'detached'});

@@ -2,15 +2,19 @@
     import { Notice } from "obsidian";
 
     import { createEventDispatcher } from "svelte";
+    import NumberEntry from "src/ui/NumberEntry.svelte";
 
     const dispatch = createEventDispatcher();
 
     export let initiative: number;
 
     export let modifier: number;
+    export let creatureName: string;
 </script>
 
 <div class="tree-item-flair-outer">
+    <NumberEntry label={`Initiative: ${creatureName}`} value={initiative} showLabel={false} compact decimal sign="minus"
+        on:set={(event) => dispatch("initiative", Number(event.detail))}>
     {#key initiative}
         <input
             class="editable initiative tree-item-flair"
@@ -46,6 +50,7 @@
             value={initiative}
         />
     {/key}
+    </NumberEntry>
 </div>
 
 <style>

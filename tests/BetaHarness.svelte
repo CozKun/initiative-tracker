@@ -54,7 +54,7 @@
     (window as any).app = plugin.app;
     const log: unknown[] = [];
     tracker.setData(plugin.data);
-    tracker.setLogger({ logUpdate: (message: unknown) => log.push(message), getLogFile: () => null } as any);
+    tracker.setLogger({ log: (message: unknown) => log.push(message), logUpdate: (message: unknown) => log.push(message), getLogFile: () => null } as any);
     const first = new Creature({ name: "Goblin", hp: 30, ac: 14, baseColor: "#FF0000" });
     const second = new Creature({ name: "Goblin", hp: 30, ac: 14, baseColor: "#0000FF" });
     first.number = 1; second.number = 2;

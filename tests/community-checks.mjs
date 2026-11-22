@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
+async function enterNumber(page, surface, label, keys) {
+    await surface.getByRole('button',{name:label,exact:true}).tap();
+    const editor=page.getByRole('dialog',{name:label,exact:true});
+    assert.equal(await editor.locator('input,textarea').count(),0);
+    for (const key of keys) await editor.getByRole('button',{name:key,exact:true}).tap();
+    await editor.getByRole('button',{name:'Set',exact:true}).tap();
+    await editor.waitFor({state:'detached'});
+}
 export async function runCommunityChecks(page, browser, url, out, check) {
     await page.goto(url+'?builder');
     const systems=['dnd5e','dnd5e-55','dnd5e-lazygm','dnd5e-cr2-simple','dnd5e-flee-mortals','pathfinder2e'];
@@ -83,7 +91,8 @@ export async function runCommunityChecks(page, browser, url, out, check) {
     check('Flee Mortals CR-cap override stays visible and suppresses misleading next-tier advice');
 
     const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1});
-    const touch=await context.newPage();const errors=[];touch.on('pageerror',e=>errors.push(e.message));
+    const touch=await context.newPage();touch.setDefaultTimeout(6000);
+    const errors=[];touch.on('pageerror',e=>{errors.push(e.message);console.error(e.stack);});
     await touch.goto(url);
     // Test host dimensions only; plugin controls still use their actual styles.
     await touch.addStyleTag({content:'body{margin:8px} main{width:100%;max-width:100%}'});
@@ -92,7 +101,7 @@ export async function runCommunityChecks(page, browser, url, out, check) {
     await touch.evaluate(()=>lastMenu.find(i=>i.title==='Apply effect…').action());
     const panel=touch.getByRole('dialog',{name:'Apply effect',exact:true});
     await panel.getByRole('button',{name:'Heal',exact:true}).tap();
-    await panel.getByLabel('Heal each target for',{exact:true}).fill('4');
+    await enterNumber(touch,panel,'Heal each target for',['4']);
     assert.equal(await panel.locator('tbody tr').evaluate(el=>getComputedStyle(el).display),'grid');
     const sizes=await panel.getByRole('button',{name:'Apply',exact:true}).boundingBox();assert.ok(sizes.height>=44);
     // Deterministic visualViewport keyboard simulation exercises resize/scroll listeners.
@@ -102,7 +111,7 @@ export async function runCommunityChecks(page, browser, url, out, check) {
         window.dispatchEvent(new Event('resize'));viewport.dispatchEvent(new Event('resize'));
     });
     await touch.waitForFunction(() => document.querySelector('.effect-panel').getBoundingClientRect().bottom <= 472);
-    const field=await panel.getByLabel('Heal each target for',{exact:true}).boundingBox();
+    const field=await panel.getByRole('button',{name:'Heal each target for',exact:true}).boundingBox();
     const footer=await panel.locator('footer').boundingBox();
     assert.ok(field.y+field.height<=footer.y,JSON.stringify({field,footer}));
     let box=await panel.boundingBox();assert.ok(box.y>=128 && box.y+box.height<=472,JSON.stringify(box));
@@ -122,7 +131,13 @@ export async function runCommunityChecks(page, browser, url, out, check) {
     await touch.waitForFunction(()=>{const b=document.querySelector('.effect-panel').getBoundingClientRect();return b.x>=8&&b.right<=836&&b.bottom<=382;});
     box=await panel.boundingBox();assert.ok(box.x>=8&&box.x+box.width<=836&&box.y+box.height<=382,JSON.stringify(box));
     await touch.setViewportSize({width:1024,height:768});
-    await panel.getByLabel('Damage per target').fill('9');
+    await enterNumber(touch,panel,'Damage per target',['8']);
+    await enterNumber(touch,panel,'HP multiplier for Goblin 1',['0','Decimal point','5']);
+    await panel.getByRole('button',{name:'Choose condition',exact:true}).tap();
+    assert.equal(await panel.locator('input[list]').count(),0);
+    await panel.getByRole('group',{name:'Available conditions'}).getByRole('button',{name:'Blinded',exact:true}).tap();
+    await panel.getByRole('button',{name:'Custom condition',exact:true}).tap();
+    await panel.getByLabel('Condition',{exact:true}).focus();
     await touch.evaluate(()=>{
         Object.assign(window.visualViewport,{width:1024,height:280,offsetTop:48});
         window.visualViewport.dispatchEvent(new Event('resize'));
@@ -138,8 +153,34 @@ export async function runCommunityChecks(page, browser, url, out, check) {
     await panel.getByRole('button',{name:'Statblocks',exact:true}).tap();
     await panel.getByText('Statblock for Goblin 1',{exact:true}).waitFor();
     await panel.getByRole('button',{name:'Back to effect',exact:true}).tap();
-    assert.equal(await panel.getByLabel('Damage per target').inputValue(),'9');
+    assert.equal(await panel.getByRole('button',{name:'Damage per target',exact:true}).innerText(),'8');
+    await panel.getByRole('button',{name:'Apply',exact:true}).tap();
+    assert.deepEqual(await touch.evaluate(()=>[fixture.first.hp,[...fixture.first.status].map(s=>s.name)]),[19,['Blinded']]);
     check('touch actions, 44px Apply, phone rotation and tablet keyboard with viewport-only events and in-place statblocks');
+
+    await touch.evaluate(()=>fixture.tracker.openEffect(fixture.first,false,'ac'));
+    await enterNumber(touch,panel,'Set AC, or use +/− to adjust',['Plus sign','2']);
+    await panel.getByRole('button',{name:'Apply',exact:true}).tap();
+    assert.equal(await touch.evaluate(()=>Number(fixture.first.current_ac)),16);
+    check('touch condition selection and number entry preserve decimal multipliers and signed AC changes');
+
+    await touch.evaluate(()=>{
+        Object.assign(window.visualViewport,{width:1024,height:768,offsetTop:0});
+        window.visualViewport.dispatchEvent(new Event('resize'));
+    });
+    await touch.getByRole('button',{name:'Save',exact:true}).tap();
+    const save=touch.getByRole('dialog',{name:'Save encounter',exact:true});
+    const saveBox=await save.boundingBox();
+    assert.ok(saveBox.y>=8 && saveBox.y<100 && Math.abs(saveBox.x+saveBox.width/2-512)<2);
+    await save.getByLabel('Encounter name').fill('Tablet save');
+    await touch.evaluate(()=>{
+        Object.assign(window.visualViewport,{width:1024,height:240,offsetTop:12});
+        window.visualViewport.dispatchEvent(new Event('resize'));
+    });
+    await touch.waitForFunction(()=>document.querySelector('.library-panel footer').getBoundingClientRect().bottom<=244);
+    await save.getByRole('button',{name:'Save encounter',exact:true}).tap();
+    assert.ok(await touch.evaluate(()=>fixture.plugin.data.encounters['Tablet save']));
+    check('tablet save opens near the top and its submit button fits above the software keyboard');
 
     await touch.setViewportSize({width:1280,height:960});
     await touch.goto(url+'?tracker-drawer');
@@ -161,9 +202,15 @@ export async function runCommunityChecks(page, browser, url, out, check) {
     assert.ok(Math.abs((nameBox.y+nameBox.height/2)-(menuBox.y+menuBox.height/2))<2);
     assert.ok(menuBox.width>=44 && menuBox.height>=44);
     assert.ok(await openStatblock.evaluate(node=>parseFloat(getComputedStyle(node).fontSize)>=14 && node.scrollWidth<=node.clientWidth));
+    assert.equal(await openStatblock.evaluate(node=>getComputedStyle(node).textAlign),'left');
     await openStatblock.tap();
     assert.ok(await touch.evaluate(()=>window.openedCombatant===window.tabletCommander.id));
     check('tablet tracker drawer keeps long names, statblock links and row menus in a single readable group');
+
+    await enterNumber(touch,touch,`Initiative: ${longName}`,['Minus sign','2','Decimal point','5']);
+    assert.equal(await touch.evaluate(()=>window.tabletCommander.initiative),-2.5);
+    await enterNumber(touch,touch,`Initiative: ${longName}`,['0']);
+    assert.equal(await touch.evaluate(()=>window.tabletCommander.initiative),0);
 
     await adjust.tap();
     const tabletHealth=touch.getByRole('dialog',{name:`Health: ${longName}`,exact:true});
@@ -182,8 +229,16 @@ export async function runCommunityChecks(page, browser, url, out, check) {
     await tabletHealth.getByRole('button',{name:'4',exact:true}).tap();
     await tabletHealth.locator('button[type=submit]').tap();
     assert.equal(await touch.evaluate(()=>window.tabletCommander.hp),22);
+    await touch.getByRole('button',{name:'Add',exact:true}).tap();
+    const add=touch.locator('.coz-add-combatant');
+    await add.getByLabel('Name',{exact:true}).fill('Tablet recruit');
+    await enterNumber(touch,add,'HP',['8']);
+    await enterNumber(touch,add,'Quantity',['2']);
+    await enterNumber(touch,add,'Initiative',['0']);
+    await add.getByRole('button',{name:'Add to encounter',exact:true}).tap();
+    assert.deepEqual(await touch.evaluate(()=>fixture.get(fixture.tracker).filter(c=>c.name==='Tablet recruit').map(c=>[c.hp,c.initiative])),[[8,0],[8,0]]);
     assert.deepEqual(errors,[]);await context.close();
-    check('tablet quick health damages and heals a lower-row target without opening an editable keyboard field');
+    check('tablet keypad handles lower-row quick HP, signed decimal initiative and adding two combatants with fixed numeric values');
 
     await page.goto(url+'?tracker-drawer');
     const desktopName=page.getByRole('button',{name:'Open statblock: Goblin 1',exact:true});
