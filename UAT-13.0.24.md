@@ -1,3 +1,5 @@
+> 29 September update: see [automated coverage and remaining engineering work](UAT-AUTOMATION-2026-09-29.md). This is the release audit inventory, not Coz's personal testing assignment. The test vault now has a six-item live-device pass.
+
 # Public release UAT — 13.0.24 candidate
 
 Prepared 26 September 2026. Candidate: 13.0.24-beta.2 (built on beta.1 commit e15fbe2).
