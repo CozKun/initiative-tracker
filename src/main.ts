@@ -759,11 +759,11 @@ export default class InitiativeTracker extends Plugin {
         await this.syncedSettings.reconcile(true);
     }
     private getActiveCombatant(): CreatureView | undefined {
-        if (
-            this.lastCombatantLeaf?.view instanceof CreatureView
-        ) {
-            return this.lastCombatantLeaf.view;
+        const last = this.lastCombatantLeaf;
+        if (last?.view instanceof CreatureView && this.app.workspace.getLeavesOfType(CREATURE_TRACKER_VIEW).includes(last)) {
+            return last.view;
         }
+        this.lastCombatantLeaf = null;
         return this.combatant;
     }
     attachCombatantDetails(creature: Creature, target: HTMLElement, owner: Component = this) {

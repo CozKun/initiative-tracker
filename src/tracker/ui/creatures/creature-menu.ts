@@ -1,4 +1,4 @@
-import { Menu } from "obsidian";
+import { Menu, type MenuPositionDef } from "obsidian";
 import { DISABLE, ENABLE, HIDDEN, HP, REMOVE } from "src/utils";
 import type { Creature } from "src/utils/creature";
 import { tracker } from "src/tracker/stores/tracker";
@@ -6,7 +6,8 @@ import { tracker } from "src/tracker/stores/tracker";
 export function showCreatureMenu(
     creature: Creature,
     onEdit: () => void,
-    evt: MouseEvent
+    position: MenuPositionDef,
+    doc?: Document
 ) {
     const menu = new Menu();
 
@@ -100,5 +101,5 @@ export function showCreatureMenu(
             });
     });
 
-    menu.showAtPosition(evt);
+    menu.showAtPosition(position, doc);
 }

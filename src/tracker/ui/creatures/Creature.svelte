@@ -25,6 +25,15 @@
         setIcon(div, FRIENDLY);
     };
     const actionsIcon = (button: HTMLElement) => setIcon(button, "ellipsis");
+    const edit = () => dispatch("edit", creature);
+    function keyboardMenu(event: KeyboardEvent) {
+        if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const button = event.currentTarget as HTMLButtonElement;
+        const { left, bottom } = button.getBoundingClientRect();
+        showCreatureMenu(creature, edit, { x: left, y: bottom }, button.ownerDocument);
+    }
 
     const hoverParent: { hoverPopover: null } = { hoverPopover: null };
     let hoverTimeout: NodeJS.Timeout = null;
@@ -84,13 +93,13 @@
     <div class="identity-line">
         <button type="button" class="name-holder" aria-label={`Open statblock: ${name}`}
             on:click|stopPropagation={(evt) => dispatch("open-combatant", { creature, newLeaf: evt.ctrlKey || evt.metaKey })}
-            on:mouseenter={tryHover} on:mouseleave={cancelHover}>
+            on:mouseenter={tryHover} on:mouseleave={cancelHover} on:keydown={keyboardMenu}>
             {#if creature.hidden}<span class="centered-icon" use:hiddenIcon aria-hidden="true" />{/if}
             {#if creature.friendly}<span class="centered-icon" use:friendlyIcon aria-hidden="true" />{/if}
             <span class="name" class:player={creature.player} class:ally={creature.friendly}>{name}</span>
         </button>
-        <button type="button" class="creature-actions" aria-label={`Actions for ${name}`} use:actionsIcon
-            on:click|stopPropagation={(evt) => showCreatureMenu(creature, () => dispatch("edit", creature), evt)} />
+        <button type="button" class="creature-actions" class:mobile-actions={Platform.isMobile} aria-label={`Actions for ${name}`} use:actionsIcon
+            on:click|stopPropagation={(evt) => showCreatureMenu(creature, edit, evt, evt.view?.document)} />
     </div>
     {#if statuses.size}
         <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -151,13 +160,15 @@
 
 <style scoped>
     .name-container { padding-inline:0.3rem 0.15rem; vertical-align:middle; }
-    .identity-line { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:0.2rem; }
+    .identity-line { display:flex; align-items:center; gap:0.2rem; }
     .identity-line button { background:transparent; box-shadow:none; border:0; margin:0; }
-    .creature-actions { display:grid; place-items:center; padding:0; width:1.65rem; height:1.65rem; color:var(--text-muted); }
+    .creature-actions { display:none; flex:none; place-items:center; padding:0; width:44px; height:44px; color:var(--text-muted); }
+    .creature-actions.mobile-actions { display:grid; }
     .name.player, .name.ally { font-weight:700; }
     .health-selected { outline: 2px solid var(--interactive-accent); outline-offset: -2px; border-radius: var(--radius-s); }
     button.name-holder {
         display: flex;
+        flex:1;
         align-items: center;
         gap: 0.25rem;
         min-width:0;
@@ -213,6 +224,6 @@
     }
     @media (pointer:coarse) {
         button.name-holder { min-height:44px; font-size:max(0.875rem, var(--font-ui-small, 0.875rem)); }
-        button.creature-actions { width:44px; height:44px; }
+        button.creature-actions { display:grid; }
     }
 </style>

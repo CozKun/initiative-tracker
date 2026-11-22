@@ -125,11 +125,8 @@ export class CreatureView extends ItemView {
     onload() {
         new ExtraButtonComponent(this.buttonEl)
             .setIcon("cross")
-            .setTooltip("Close Statblock")
-            .onClick(async () => {
-                await this.render();
-                this.app.workspace.trigger("initiative-tracker:stop-viewing");
-            });
+            .setTooltip("Close creature pane")
+            .onClick(() => this.leaf.detach());
     }
     onunload(): void {
         this.unmountDetails?.();

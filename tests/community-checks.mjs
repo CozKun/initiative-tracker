@@ -187,11 +187,11 @@ export async function runCommunityChecks(page, browser, url, out, check) {
 
     await page.goto(url+'?tracker-drawer');
     const desktopName=page.getByRole('button',{name:'Open statblock: Goblin 1',exact:true});
-    const desktopMenu=page.getByRole('button',{name:'Actions for Goblin 1',exact:true});
-    const desktopNameBox=await desktopName.boundingBox(), desktopMenuBox=await desktopMenu.boundingBox();
-    assert.ok(desktopNameBox.x+desktopNameBox.width<=desktopMenuBox.x);
-    assert.ok(Math.abs((desktopNameBox.y+desktopNameBox.height/2)-(desktopMenuBox.y+desktopMenuBox.height/2))<2);
-    await desktopMenu.click();
+    assert.equal(await page.getByRole('button',{name:'Actions for Goblin 1',exact:true}).count(),0);
+    await desktopName.click({button:'right'});
     assert.ok(await page.evaluate(()=>lastMenu.some(item=>item.title==='Apply effect…')));
-    check('desktop tracker puts the actions beside the name and the drag lock leaves the menu usable');
+    await page.evaluate(()=>window.lastMenu=[]);
+    await desktopName.press('Shift+F10');
+    assert.ok(await page.evaluate(()=>lastMenu.some(item=>item.title==='Apply effect…')));
+    check('desktop uses right-click or Shift+F10 for actions and leaves row controls usable with drag locked');
 }

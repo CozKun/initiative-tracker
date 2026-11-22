@@ -171,7 +171,8 @@
                         showCreatureMenu(
                             creature,
                             () => dispatch("edit", creature),
-                            evt
+                            evt,
+                            evt.view?.document
                         );
                     }}
                 >
