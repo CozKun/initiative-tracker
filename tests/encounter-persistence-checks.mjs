@@ -104,6 +104,42 @@ export async function runEncounterPersistenceChecks(page, url, check) {
     assert.deepEqual(group,{contents:[[4,50,['#FF0000','#0000FF',null,null]]],initiative:[11,11,11,12,13],colours:['#FF0000','#0000FF',null]});
     check('differently coloured and damaged copies regroup in the builder and share initiative in combat, while other modifiers and allies stay separate');
 
+    await page.goto(`${url}?builder`);
+    await page.evaluate(() => {
+        const { Creature, builderPlayers, plugin, tracker } = fixture;
+        const members = [6, "6", 6, " 6 ", 6, "06"].map((level, index) =>
+            new Creature({ name: `Difficulty player ${index + 1}`, level, player: true })
+        );
+        plugin.data.parties = [{ name: "Mixed level formats", players: members.map(player => player.name) }];
+        plugin.getPlayersForParty = () => members;
+        builderPlayers.empty();
+        tracker.setData(plugin.data);
+    });
+    await page.getByLabel("Select a party", { exact: true }).selectOption("Mixed level formats");
+    assert.equal(await page.locator(".party-count").innerText(), "6 in tracker");
+    assert.match(await page.locator(".party-context").innerText(), /6 enabled players/);
+    assert.deepEqual(await page.evaluate(() => fixture.get(fixture.builderPlayers.levels)), [6, 6, 6, 6, 6, 6]);
+    const budgets = await page.evaluate(() => {
+        const { Creature, builderPlayers, get, plugin, tracker } = fixture;
+        const roster = get(builderPlayers).map(player => Creature.from({ ...player, player: true }));
+        roster.push(
+            new Creature({ name: "Player awaiting a level", player: true, xp: 9000 }),
+            new Creature({ name: "Enemy", level: 8, xp: 450 })
+        );
+        tracker.set(roster);
+        plugin.data.rpgSystem = "dnd5e-55";
+        tracker.setData(plugin.data);
+        const dnd = get(tracker.difficulty(plugin));
+        plugin.data.rpgSystem = "pathfinder2e";
+        tracker.setData(plugin.data);
+        const pathfinder = get(tracker.difficulty(plugin));
+        return { dndXp: dnd.difficulty.value, dndHigh: dnd.thresholds.at(-1).minValue, pfXp: pathfinder.difficulty.value };
+    });
+    assert.deepEqual(budgets, { dndXp: 450, dndHigh: 8400, pfXp: 80 });
+    await page.locator(".named-player").filter({ hasText: "Difficulty player 2" }).getByRole("checkbox").uncheck();
+    assert.match(await page.locator(".party-context").innerText(), /5 enabled players/);
+    check("saved parties count text and numeric levels in the builder and tracker, while unlevelled players contribute no enemy XP");
+
     const sync = await page.evaluate(async () => {
         const {Creature, plugin, SyncedSettings, tracker, get} = fixture;
         const encounter = (name, baseColor) => ({name, creatures:[new Creature({name:'Goblin',baseColor}).toJSON()]});

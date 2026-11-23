@@ -1,4 +1,4 @@
-import { Creature, getId, playerIdentity } from "src/utils/creature";
+import { Creature, getId, parsePlayerLevel, playerIdentity } from "src/utils/creature";
 import type InitiativeTracker from "../../main";
 import {
     derived,
@@ -963,8 +963,9 @@ function createTracker() {
                 for (const creature of values) {
                     if (!creature.enabled) continue;
                     if (creature.friendly) continue;
-                    if (creature.player && creature.level) {
-                        players.push(creature.level);
+                    if (creature.player) {
+                        const level = parsePlayerLevel(creature.level);
+                        if (level !== undefined) players.push(level);
                         continue;
                     }
                     // Group by inputs used by the difficulty calculators, not combat presentation.

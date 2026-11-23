@@ -1,6 +1,6 @@
 import { derived, get, writable } from "svelte/store";
 import type { CreatureState } from "src/types/creatures";
-import { Creature, playerIdentity } from "src/utils/creature";
+import { Creature, parsePlayerLevel, playerIdentity } from "src/utils/creature";
 
 export const playerCount = writable(0);
 
@@ -35,8 +35,11 @@ function trackerCount(player: CombinedPlayer): number {
 }
 
 export function enabledPlayerLevels(players: CombinedPlayer[]): number[] {
-    return players.filter((p) => p.enabled && Number.isInteger(p.level) && p.level > 0)
-        .flatMap((p) => Array.from({ length: Number.isSafeInteger(p.count) && p.count > 0 ? p.count : 0 }, () => p.level));
+    return players.flatMap((player) => {
+        if (!player.enabled || !Number.isSafeInteger(player.count) || player.count <= 0) return [];
+        const level = parsePlayerLevel(player.level);
+        return level === undefined ? [] : Array.from({ length: player.count }, () => level);
+    });
 }
 
 export function expandPlayers(items: CombinedPlayer[], findPlayer: (name: string) => Creature | undefined): Creature[] {

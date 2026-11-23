@@ -20,6 +20,15 @@ export function playerIdentity(player: HomebrewCreature): string {
         : `name:${player.name.trim().toLowerCase()}`;
 }
 
+export function parsePlayerLevel(level: unknown): number | undefined {
+    if (typeof level === "string" && /^\d+$/.test(level.trim())) {
+        level = Number(level);
+    }
+    return typeof level === "number" && Number.isSafeInteger(level) && level > 0
+        ? level
+        : undefined;
+}
+
 export class Creature {
     active: boolean;
     name: string;
