@@ -1,6 +1,6 @@
 {
     "name": "coz-initiative-tracker",
-    "version": "13.0.24",
+    "version": "13.0.25",
     "description": "Community Edition of Initiative Tracker for Obsidian, focused on in-person tabletop play.",
     "types": "./dist/index.d.ts",
     "scripts": {

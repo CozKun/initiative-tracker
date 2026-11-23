@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## Coz Initiative Tracker Community Edition
 
+### 13.0.25
+
+Fixed an issue where the Encounter Builder could show every player's level but calculate difficulty for only part of the party.
+
+* The builder and tracker now include valid player levels stored as text, such as `"6"`, when calculating the encounter budget.
+* Players without a valid level stay in the roster and contribute zero enemy XP.
+
 ### 13.0.24
 
 13.0.24 makes it easier to plan an encounter on one device and run it at the table on another. It brings a touch keypad, a rebuilt Apply Effect panel, a shared encounter library and clearer difficulty calculations across six rulesets and variants.

@@ -54,7 +54,7 @@ Community Edition is distributed through **GitHub Releases**. It is **not listed
 
 Requires **Obsidian 1.7.2 or newer**.
 
-1. Download **`coz-initiative-tracker-13.0.24.zip`** from [Community Edition releases](https://github.com/CozKun/initiative-tracker/releases). Use the named plugin ZIP.
+1. Download **`coz-initiative-tracker-13.0.25.zip`** from [Community Edition releases](https://github.com/CozKun/initiative-tracker/releases). Use the named plugin ZIP.
 2. Close Obsidian. Open your vault's `.obsidian/plugins/` folder; create `plugins` if necessary. Your file manager may hide `.obsidian`.
 3. Extract the ZIP into `plugins`. The final layout must contain:
 
